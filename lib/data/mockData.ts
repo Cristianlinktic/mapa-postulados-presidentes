@@ -9,16 +9,16 @@ export interface TerritorialData {
   riesgoReputacional: 'Bajo' | 'Medio' | 'Alto' | 'Crítico';
 }
 
-// Function to generate pseudo-random data for demonstration
-const generateRandomData = (id: string, name: string): TerritorialData => ({
+// Use deterministic values instead of Math.random() to prevent hydration mismatches
+const getDeterministicData = (id: string, name: string): TerritorialData => ({
   id,
   name,
-  poblacion: Math.floor(Math.random() * 2000000) + 100000,
-  censoElectoral: Math.floor(Math.random() * 1000000) + 50000,
-  favorabilidadCepeda: Math.floor(Math.random() * 100),
-  favorabilidadDeLaEspriella: Math.floor(Math.random() * 100),
-  sentimientoPredominante: ['Positivo', 'Negativo', 'Neutral'][Math.floor(Math.random() * 3)] as 'Positivo' | 'Negativo' | 'Neutral',
-  riesgoReputacional: ['Bajo', 'Medio', 'Alto', 'Crítico'][Math.floor(Math.random() * 4)] as 'Bajo' | 'Medio' | 'Alto' | 'Crítico',
+  poblacion: 1000000 + (parseInt(id.slice(-3)) * 1000),
+  censoElectoral: 500000 + (parseInt(id.slice(-3)) * 500),
+  favorabilidadCepeda: 40 + (parseInt(id.slice(-1)) * 2),
+  favorabilidadDeLaEspriella: 45 - (parseInt(id.slice(-1)) * 2),
+  sentimientoPredominante: 'Neutral',
+  riesgoReputacional: 'Medio',
 });
 
 const departments = [
@@ -58,6 +58,6 @@ const departments = [
 ];
 
 export const mockTerritorialData: Record<string, TerritorialData> = departments.reduce((acc, dept) => {
-  acc[dept.shapeID] = generateRandomData(dept.shapeID, dept.name);
+  acc[dept.shapeID] = getDeterministicData(dept.shapeID, dept.name);
   return acc;
 }, {} as Record<string, TerritorialData>);
