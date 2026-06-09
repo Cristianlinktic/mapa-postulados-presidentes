@@ -30,6 +30,17 @@ export default function MapContainer() {
 
     map.current.on('load', () => {
       if (!map.current) return;
+      
+      // Force the background of the entire map canvas
+      const layers = map.current.getStyle().layers;
+      if (layers) {
+        layers.forEach((layer) => {
+          if (layer.id === 'water' || layer.id === 'background') {
+            map.current?.setPaintProperty(layer.id, layer.type === 'background' ? 'background-color' : 'fill-color', '#0a0c14');
+          }
+        });
+      }
+
       map.current.addSource('colombia', {
         type: 'geojson',
         data: '/data/colombia.geo.json',
@@ -194,5 +205,11 @@ export default function MapContainer() {
     });
   }, [setSelectedLocationId]);
 
-  return <div ref={mapContainer} className="h-full w-full rounded-lg" />;
+  return (
+    <div className="relative h-full w-full rounded-2xl overflow-hidden border border-white/[0.05] bg-black">
+      <div ref={mapContainer} className="h-full w-full" />
+      {/* Subtle overlay to integrate base map with dark theme */}
+      <div className="absolute inset-0 pointer-events-none bg-gradient-to-tr from-black/40 to-transparent" />
+    </div>
+  );
 }
