@@ -47,7 +47,7 @@
   }
 
   body {
-    background-color: var(--color-void);
+    background: radial-gradient(circle at 50% -20%, #111827 0%, #02040a 100%);
     color: var(--color-text-primary);
     font-family: var(--font-body);
     -webkit-font-smoothing: antialiased;
@@ -58,21 +58,21 @@
   h2,
   h3,
   h4 {
-    font-family: var(--font-display);
+    font-family: 'Satoshi', sans-serif;
     letter-spacing: -0.02em;
   }
 }
 
 @layer components {
   .glass-panel {
-    background: var(--color-glass-bg);
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.05) 0%, rgba(255, 255, 255, 0.02) 100%);
     backdrop-filter: blur(12px) saturate(1.8);
     border: 1px solid var(--color-glass-border);
     box-shadow: 0 4px 24px -1px rgba(0, 0, 0, 0.4);
   }
 
   .intel-panel {
-    background: var(--color-surface);
+    background: linear-gradient(180deg, #111420 0%, #0a0c14 100%);
     border: 1px solid var(--color-glass-border);
     box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.5);
     position: relative;
