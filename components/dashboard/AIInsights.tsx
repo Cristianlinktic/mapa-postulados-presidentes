@@ -33,13 +33,12 @@ export function AIInsights() {
       {/* Header */}
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2.5">
-          <div className="w-7 h-7 rounded-lg flex items-center justify-center"
-            style={{ background: 'rgba(201,168,76,0.1)', border: '1px solid rgba(201,168,76,0.2)' }}>
-            <Cpu size={13} style={{ color: 'var(--color-gold)' }} />
+          <div className="w-7 h-7 rounded-lg flex items-center justify-center bg-gold/[0.1] border border-gold/[0.2]">
+            <Cpu size={13} className="text-gold" />
           </div>
           <div>
             <div className="section-label">Análisis de IA</div>
-            <div className="mono-data text-[10px]" style={{ color: 'rgba(201,168,76,0.5)' }}>
+            <div className="mono-data text-[10px] text-gold/50">
               Tema: {theme}
             </div>
           </div>
@@ -47,7 +46,7 @@ export function AIInsights() {
         {/* Confidence */}
         <div className="text-right">
           <div className="section-label mb-0.5">Confianza</div>
-          <div className="mono-data text-sm font-semibold" style={{ color: 'var(--color-gold)' }}>
+          <div className="mono-data text-sm font-semibold text-gold">
             {insight.confidence}%
           </div>
         </div>
@@ -56,24 +55,17 @@ export function AIInsights() {
       <div className="gold-divider" />
 
       {/* Insight text */}
-      <p className="text-sm leading-relaxed italic"
-        style={{
-          fontFamily: 'var(--font-display)',
-          color: 'rgba(241,240,237,0.85)',
-          fontStyle: 'italic',
-        }}>
+      <p className="text-sm leading-relaxed italic text-[#f1f0ed]/90 font-['Satoshi',sans-serif]">
         "{insight.text}"
       </p>
 
       {/* Confidence bar */}
       <div className="mt-4">
-        <div className="progress-bar">
+        <div className="h-1.5 w-full bg-white/5 rounded-full overflow-hidden">
           <div
-            className="progress-fill"
+            className="h-full transition-all duration-1000 ease-out bg-gold"
             style={{
               width: `${insight.confidence}%`,
-              background: `linear-gradient(90deg, rgba(201,168,76,0.4), rgba(201,168,76,0.8))`,
-              transition: 'width 0.8s ease',
             }}
           />
         </div>

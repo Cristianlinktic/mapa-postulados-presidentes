@@ -5,23 +5,23 @@ import { Shield } from "lucide-react";
 
 const riskConfig: Record<string, { badgeClass: string; barColor: string; width: string }> = {
   Bajo: {
-    badgeClass: 'risk-low',
-    barColor: 'rgba(16,185,129,0.7)',
+    badgeClass: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20',
+    barColor: 'bg-emerald-500/70',
     width: '25%',
   },
   Medio: {
-    badgeClass: 'risk-medium',
-    barColor: 'rgba(245,158,11,0.7)',
+    badgeClass: 'bg-amber-500/10 text-amber-400 border-amber-500/20',
+    barColor: 'bg-amber-500/70',
     width: '50%',
   },
   Alto: {
-    badgeClass: 'risk-high',
-    barColor: 'rgba(249,115,22,0.7)',
+    badgeClass: 'bg-orange-500/10 text-orange-400 border-orange-500/20',
+    barColor: 'bg-orange-500/70',
     width: '75%',
   },
   Crítico: {
-    badgeClass: 'risk-critical',
-    barColor: 'rgba(239,68,68,0.8)',
+    badgeClass: 'bg-red-500/10 text-red-400 border-red-500/20',
+    barColor: 'bg-red-500/80',
     width: '100%',
   },
 };
@@ -30,13 +30,13 @@ export function ReputationRisk() {
   const candidates = Object.keys(reputationRiskData) as Array<keyof typeof reputationRiskData>;
 
   return (
-    <div className="p-5">
+    <div className="p-5 font-['Satoshi',sans-serif]">
       {/* Header */}
       <div className="flex items-center gap-2 mb-1">
-        <Shield size={11} style={{ color: 'var(--color-gold)', opacity: 0.7 }} />
+        <Shield size={12} className="text-gold opacity-70" />
         <div className="section-label">Riesgo reputacional</div>
       </div>
-      <h2 className="display-title text-base text-[#F1F0ED] mb-4 leading-none">
+      <h2 className="display-title text-base text-white mb-4 leading-none">
         Monitor de vulnerabilidad
       </h2>
 
@@ -47,15 +47,15 @@ export function ReputationRisk() {
           const data = reputationRiskData[candidate];
           const config = riskConfig[data.level] ?? riskConfig['Bajo'];
           const isCepeda = candidate.toLowerCase().includes('cepeda');
-          const accentColor = isCepeda ? 'var(--color-cepeda)' : 'var(--color-espriella)';
-          const borderColor = isCepeda ? 'rgba(16,185,129,0.15)' : 'rgba(96,165,250,0.15)';
+          
+          const accentClass = isCepeda ? 'text-cepeda' : 'text-espriella';
+          const borderClass = isCepeda ? 'border-cepeda/[0.15]' : 'border-espriella/[0.15]';
 
           return (
-            <div key={candidate} className="space-y-3">
+            <div key={candidate} className="space-y-4">
               {/* Candidate name */}
               <div
-                className="mono-data text-[9px] font-semibold uppercase tracking-widest pb-1.5"
-                style={{ color: accentColor, borderBottom: `1px solid ${borderColor}` }}
+                className={`mono-data text-[10px] font-bold uppercase tracking-widest pb-1.5 border-b ${borderClass} ${accentClass}`}
               >
                 {candidate}
               </div>
@@ -63,39 +63,38 @@ export function ReputationRisk() {
               {/* Risk level */}
               <div className="space-y-2">
                 <div className="section-title mb-1">Nivel de riesgo</div>
-                <span className={`risk-badge ${config.badgeClass}`}>
-                  <span className="w-1.5 h-1.5 rounded-full" style={{ background: 'currentColor' }} />
+                <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-[10px] font-medium border ${config.badgeClass}`}>
+                  <span className="w-1.5 h-1.5 rounded-full bg-current" />
                   {data.level}
                 </span>
 
                 {/* Risk bar */}
-                <div className="progress-bar mt-2">
+                <div className="h-1.5 w-full bg-white/5 rounded-full overflow-hidden mt-2">
                   <div
-                    className="progress-fill"
-                    style={{
-                      width: config.width,
-                      background: config.barColor,
-                      transition: 'width 1s ease',
-                    }}
+                    className={`h-full transition-all duration-1000 ease-out ${config.barColor}`}
+                    style={{ width: config.width }}
                   />
                 </div>
               </div>
 
               {/* Top attacks */}
-              <div>
+              <div className="space-y-2">
                 <div className="section-title">Ataques principales</div>
-                <div className="flex flex-col gap-1">
+                <ul className="space-y-2">
                   {data.topAttacks.map((attack, i) => (
-                    <div key={i} className="flex items-start gap-1.5">
-                      <span className="mono-data text-[9px] mt-0.5" style={{ color: 'rgba(239,68,68,0.5)' }}>
-                        {i + 1}.
+                    <li 
+                      key={i} 
+                      className="flex items-start gap-3 text-xs text-white/80"
+                    >
+                      <span className="mono-data font-bold text-red-500/60 mt-0.5">
+                        {String(i + 1).padStart(2, '0')}
                       </span>
-                      <span className="text-[10px] leading-tight" style={{ color: 'rgba(241,240,237,0.6)' }}>
+                      <span className="font-['Satoshi',sans-serif] leading-snug tracking-normal">
                         {attack}
                       </span>
-                    </div>
+                    </li>
                   ))}
-                </div>
+                </ul>
               </div>
             </div>
           );

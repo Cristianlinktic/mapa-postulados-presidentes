@@ -55,23 +55,20 @@ export function TerritorialSummary() {
 
   return (
     <div className="p-5">
-      {/* Region header */}
-      <div className="flex items-start justify-between mb-4">
+      {/* Region header with gold highlight */}
+      <div className="flex items-start justify-between mb-4 p-3 rounded-lg bg-white/[0.05] border border-white/[0.1]">
         <div>
           <div className="section-label mb-1">Análisis territorial</div>
           <h2
-            className="display-title text-lg text-[#F1F0ED] leading-tight"
+            className="display-title text-lg text-white leading-tight"
           >
             {data.name}
           </h2>
         </div>
         <div
-          className="shrink-0 px-2 py-1 rounded text-[9px] mono-data uppercase tracking-widest"
-          style={{
-            background: cepedaLeads ? 'rgba(16,185,129,0.08)' : 'rgba(96,165,250,0.08)',
-            border: `1px solid ${cepedaLeads ? 'rgba(16,185,129,0.2)' : 'rgba(96,165,250,0.2)'}`,
-            color: cepedaLeads ? 'var(--color-cepeda)' : 'var(--color-espriella)',
-          }}
+          className={`shrink-0 px-2 py-1 rounded text-[9px] mono-data uppercase tracking-widest border
+            ${cepedaLeads ? 'bg-cepeda/[0.08] border-cepeda/[0.2] text-cepeda' : 'bg-espriella/[0.08] border-espriella/[0.2] text-espriella'}
+          `}
         >
           {cepedaLeads ? 'Cepeda +' : 'Espriella +'}{gap}pts
         </div>
@@ -96,19 +93,18 @@ export function TerritorialSummary() {
         {/* Cepeda */}
         <div>
           <div className="flex justify-between items-center mb-1.5">
-            <span className="section-title mb-0" style={{ color: 'var(--color-cepeda)', opacity: 0.8 }}>
+            <span className="section-title mb-0 text-cepeda/80">
               Cepeda
             </span>
-            <span className="mono-data text-sm font-semibold" style={{ color: 'var(--color-cepeda)' }}>
+            <span className="mono-data text-sm font-semibold text-cepeda">
               {data.favorabilidadCepeda}%
             </span>
           </div>
-          <div className="progress-bar">
+          <div className="h-1.5 w-full bg-white/[0.05] rounded-full overflow-hidden">
             <div
-              className="progress-fill"
+              className="h-full transition-all duration-1000 ease-out bg-cepeda"
               style={{
                 width: `${data.favorabilidadCepeda}%`,
-                background: 'linear-gradient(90deg, rgba(16,185,129,0.5), #10B981)',
               }}
             />
           </div>
@@ -117,19 +113,18 @@ export function TerritorialSummary() {
         {/* Espriella */}
         <div>
           <div className="flex justify-between items-center mb-1.5">
-            <span className="section-title mb-0" style={{ color: 'var(--color-espriella)', opacity: 0.8 }}>
+            <span className="section-title mb-0 text-espriella/80">
               De la Espriella
             </span>
-            <span className="mono-data text-sm font-semibold" style={{ color: 'var(--color-espriella)' }}>
+            <span className="mono-data text-sm font-semibold text-espriella">
               {data.favorabilidadDeLaEspriella}%
             </span>
           </div>
-          <div className="progress-bar">
+          <div className="h-1.5 w-full bg-white/[0.05] rounded-full overflow-hidden">
             <div
-              className="progress-fill"
+              className="h-full transition-all duration-1000 ease-out bg-espriella"
               style={{
                 width: `${data.favorabilidadDeLaEspriella}%`,
-                background: 'linear-gradient(90deg, rgba(96,165,250,0.5), #60A5FA)',
               }}
             />
           </div>

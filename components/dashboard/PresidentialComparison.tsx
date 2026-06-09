@@ -9,7 +9,7 @@ export function PresidentialComparison() {
     <div className="p-5">
       {/* Header */}
       <div className="section-label mb-1">Comparador Presidencial</div>
-      <h2 className="display-title text-base text-[#F1F0ED] mb-4 leading-none">
+      <h2 className="display-title text-base text-white mb-4 leading-none">
         Candidatos 2026
       </h2>
 
@@ -23,12 +23,12 @@ export function PresidentialComparison() {
 
       {/* Gap indicator */}
       <div className="mt-4 flex items-center gap-2">
-        <div className="flex-1 h-px" style={{ background: 'rgba(16,185,129,0.2)' }} />
+        <div className="flex-1 h-px" style={{ background: 'rgba(16, 185, 129, 0.1)' }} />
         <div className="mono-data text-[9px] uppercase tracking-widest px-2"
-          style={{ color: 'rgba(241,240,237,0.3)' }}>
+          style={{ color: 'rgba(241, 240, 237, 0.2)' }}>
           Brecha: {Math.abs(cepeda.favorabilidad - espriella.favorabilidad).toFixed(1)} pts
         </div>
-        <div className="flex-1 h-px" style={{ background: 'rgba(96,165,250,0.2)' }} />
+        <div className="flex-1 h-px" style={{ background: 'rgba(59, 130, 246, 0.1)' }} />
       </div>
     </div>
   );
@@ -37,8 +37,8 @@ export function PresidentialComparison() {
 function CandidateCard({ data, color }: { data: CandidateData; color: 'cepeda' | 'espriella' }) {
   const isCepeda = color === 'cepeda';
   const accent = isCepeda ? 'var(--color-cepeda)' : 'var(--color-espriella)';
-  const bgAccent = isCepeda ? 'rgba(16,185,129,0.06)' : 'rgba(96,165,250,0.06)';
-  const borderAccent = isCepeda ? 'rgba(16,185,129,0.2)' : 'rgba(96,165,250,0.2)';
+  const bgAccent = isCepeda ? 'rgba(16, 185, 129, 0.04)' : 'rgba(59, 130, 246, 0.04)';
+  const borderAccent = isCepeda ? 'rgba(16, 185, 129, 0.15)' : 'rgba(59, 130, 246, 0.15)';
 
   return (
     <div
@@ -51,7 +51,7 @@ function CandidateCard({ data, color }: { data: CandidateData; color: 'cepeda' |
           style={{ color: accent, opacity: 0.8 }}>
           {isCepeda ? 'Candidato A' : 'Candidato B'}
         </div>
-        <div className="text-xs font-semibold leading-tight text-[#F1F0ED]">
+        <div className="text-xs font-semibold leading-tight text-white">
           {data.name}
         </div>
       </div>
@@ -60,18 +60,18 @@ function CandidateCard({ data, color }: { data: CandidateData; color: 'cepeda' |
       <div>
         <div className="section-title mb-1">Favorabilidad</div>
         <div className="flex items-end gap-1.5">
-          <div className="mono-data text-xl font-semibold" style={{ color: accent }}>
+          <div className="mono-data text-xl font-bold tracking-tight" style={{ color: accent }}>
             {data.favorabilidad}
           </div>
           <div className="mono-data text-[10px] mb-1" style={{ color: accent, opacity: 0.6 }}>%</div>
           <TrendingUp size={11} className="mb-1 ml-auto" style={{ color: accent, opacity: 0.6 }} />
         </div>
-        <div className="progress-bar mt-1.5">
+        <div className="h-1 w-full bg-white/5 rounded-full overflow-hidden mt-1.5">
           <div
-            className="progress-fill"
+            className="h-full"
             style={{
               width: `${data.favorabilidad}%`,
-              background: `linear-gradient(90deg, ${accent}44, ${accent})`,
+              background: accent,
             }}
           />
         </div>
@@ -81,17 +81,18 @@ function CandidateCard({ data, color }: { data: CandidateData; color: 'cepeda' |
       <div>
         <div className="section-title mb-1">Negatividad</div>
         <div className="flex items-end gap-1.5">
-          <div className="mono-data text-sm font-medium" style={{ color: 'rgba(239,68,68,0.9)' }}>
+          <div className="mono-data text-sm font-medium" style={{ color: 'var(--color-alert)' }}>
             {data.negatividad}%
           </div>
-          <TrendingDown size={10} className="mb-0.5 ml-auto" style={{ color: 'rgba(239,68,68,0.5)' }} />
+          <TrendingDown size={10} className="mb-0.5 ml-auto" style={{ color: 'var(--color-alert)', opacity: 0.5 }} />
         </div>
-        <div className="progress-bar mt-1.5">
+        <div className="h-1 w-full bg-white/5 rounded-full overflow-hidden mt-1.5">
           <div
-            className="progress-fill"
+            className="h-full"
             style={{
               width: `${data.negatividad}%`,
-              background: 'linear-gradient(90deg, rgba(239,68,68,0.3), rgba(239,68,68,0.7))',
+              background: 'var(--color-alert)',
+              opacity: 0.6
             }}
           />
         </div>

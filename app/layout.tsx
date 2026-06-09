@@ -1,19 +1,16 @@
 import type { Metadata } from "next";
-import { Playfair_Display } from "next/font/google";
+import { Inter, Outfit, Playfair_Display, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 import { cn } from "@/lib/utils";
 
-const playfair = Playfair_Display({
-  subsets: ["latin"],
-  variable: "--font-playfair",
-  weight: ["400", "600", "700", "900"],
-  style: ["normal", "italic"],
-});
+const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
+const outfit = Outfit({ subsets: ["latin"], variable: "--font-outfit" });
+const playfair = Playfair_Display({ subsets: ["latin"], variable: "--font-playfair" });
+const jetbrains = JetBrains_Mono({ subsets: ["latin"], variable: "--font-jetbrains" });
 
 export const metadata: Metadata = {
   title: "Colombia Electoral Intelligence 2026",
-  description: "Centro de inteligencia electoral — análisis territorial y narrativo en tiempo real para las elecciones presidenciales de Colombia 2026.",
-  keywords: ["Colombia", "elecciones", "2026", "inteligencia electoral", "Cepeda", "De la Espriella"],
+  description: "Centro de inteligencia electoral — análisis territorial y narrativo en tiempo real.",
 };
 
 export default function RootLayout({
@@ -24,9 +21,15 @@ export default function RootLayout({
   return (
     <html
       lang="es"
-      className={cn("h-full", playfair.variable)}
+      className={cn(
+        "h-full dark", 
+        inter.variable, 
+        outfit.variable, 
+        playfair.variable, 
+        jetbrains.variable
+      )}
     >
-      <body className="min-h-full flex flex-col bg-[#04060d] text-[#F1F0ED] antialiased overflow-hidden">
+      <body className="min-h-full flex flex-col bg-[#02040a] text-[#f1f0ed] font-sans antialiased overflow-hidden">
         {/* Grain overlay for cinematic texture */}
         <div className="grain-overlay" aria-hidden="true" />
         {children}

@@ -30,14 +30,12 @@ export function ThemeFilter() {
             key={theme}
             id={`theme-filter-${theme.toLowerCase()}`}
             onClick={() => setCurrentTheme(theme)}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-md transition-all duration-200"
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md transition-all duration-200 border
+              ${isActive ? 'bg-gold/[0.12] border-gold/[0.25] text-gold font-semibold' : 'bg-transparent border-transparent text-[#f1f0ed]/40 font-normal'}
+            `}
             style={{
-              background: isActive ? 'rgba(201,168,76,0.12)' : 'transparent',
-              border: isActive ? '1px solid rgba(201,168,76,0.25)' : '1px solid transparent',
-              color: isActive ? 'var(--color-gold)' : 'rgba(241,240,237,0.4)',
-              fontFamily: 'var(--font-mono)',
+              fontFamily: 'Satoshi, sans-serif',
               fontSize: '10px',
-              fontWeight: isActive ? 600 : 400,
               letterSpacing: '0.08em',
               textTransform: 'uppercase',
               cursor: 'pointer',

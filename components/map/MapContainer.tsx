@@ -57,8 +57,10 @@ export default function MapContainer() {
         paint: {
           'fill-color': [
             'case',
+            ['boolean', ['feature-state', 'selected'], false],
+            '#C9A84C', // Active State (Premium Gold)
             ['boolean', ['feature-state', 'hover'], false],
-            '#fef08a', // Hover color (yellowish)
+            'rgba(201, 168, 76, 0.4)', // Hover color
             colorExpression
           ],
           'fill-opacity': 0.7
@@ -72,49 +74,121 @@ export default function MapContainer() {
         source: 'colombia',
         paint: {
           'line-color': '#fff',
-          'line-width': 0.5
+          'line-width': ['case', ['boolean', ['feature-state', 'selected'], false], 2, 0.5]
         }
       });
     });
 
     let hoveredStateId: string | number | null = null;
+    let selectedStateId: string | number | null = null;
 
     map.current.on('mousemove', 'colombia-layer', (e) => {
         if (e.features && e.features.length > 0) {
             const feature = e.features[0];
-            
-            // Use the feature's generated id
             if (feature.id !== undefined) {
                 if (hoveredStateId !== null && hoveredStateId !== feature.id) {
-                    map.current?.setFeatureState(
-                        { source: 'colombia', id: hoveredStateId },
-                        { hover: false }
-                    );
+                    map.current?.setFeatureState({ source: 'colombia', id: hoveredStateId }, { hover: false });
                 }
-                hoveredStateId = feature.id as string | number;
-                map.current?.setFeatureState(
-                    { source: 'colombia', id: hoveredStateId },
-                    { hover: true }
-                );
+                hoveredStateId = feature.id;
+                map.current?.setFeatureState({ source: 'colombia', id: hoveredStateId }, { hover: true });
             }
         }
     });
 
     map.current.on('mouseleave', 'colombia-layer', () => {
         if (hoveredStateId !== null) {
-            map.current?.setFeatureState(
-                { source: 'colombia', id: hoveredStateId },
-                { hover: false }
-            );
+            map.current?.setFeatureState({ source: 'colombia', id: hoveredStateId }, { hover: false });
         }
         hoveredStateId = null;
     });
 
     map.current.on('click', 'colombia-layer', (e) => {
         if (e.features && e.features.length > 0) {
-            const id = e.features[0].properties?.shapeID;
-            if (id) {
-                setSelectedLocationId(id);
+            const feature = e.features[0];
+            const shapeID = feature.properties?.shapeID;
+            const featureId = feature.id;
+
+            if (selectedStateId !== null) {
+                map.current?.setFeatureState({ source: 'colombia', id: selectedStateId }, { selected: false });
+            }
+            if (featureId !== undefined) {
+                selectedStateId = featureId;
+                map.current?.setFeatureState({ source: 'colombia', id: selectedStateId }, { selected: true });
+            }
+
+            if (shapeID) {
+                setSelectedLocationId(shapeID);
+                
+                const data = mockTerritorialData[shapeID];
+                if (data) {
+                    new mapboxgl.Popup({ closeButton: false, className: 'intel-popup', maxWidth: '220px' })
+                        .setLngLat(e.lngLat)
+                        .setHTML(`
+                          <div style="
+                            background: var(--color-surface);
+                            border: 1px solid var(--color-gold-glow);
+                            border-radius: 12px;
+                            padding: 16px;
+                            backdrop-filter: blur(20px);
+                            font-family: 'Satoshi', sans-serif;
+                            box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+                            min-width: 200px;
+                          ">
+                            <!-- Label -->
+                            <div style="
+                              font-family: Satoshi, sans-serif;
+                              font-size: 8px;
+                              font-weight: 600;
+                              letter-spacing: 0.2em;
+                              text-transform: uppercase;
+                              color: var(--color-gold);
+                              margin-bottom: 6px;
+                            ">Análisis territorial</div>
+
+                            <!-- Region name -->
+                            <div style="
+                              font-family: Satoshi, sans-serif;
+                              font-size: 16px;
+                              font-weight: 700;
+                              color: #ffffff;
+                              margin-bottom: 12px;
+                              line-height: 1.2;
+                            ">${data.name}</div>
+
+                            <!-- Divider -->
+                            <div style="height:1px; background: rgba(201,168,76,0.2); margin-bottom: 12px;"></div>
+
+                            <!-- Cepeda row -->
+                            <div style="margin-bottom: 10px;">
+                              <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 4px;">
+                                <span style="font-family: Satoshi, sans-serif; font-size: 8px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--color-cepeda);">Cepeda</span>
+                                <span style="font-family: Satoshi, sans-serif; font-size: 11px; font-weight: 600; color: var(--color-cepeda);">${data.favorabilidadCepeda}%</span>
+                              </div>
+                              <div style="height: 4px; border-radius: 2px; background: rgba(255,255,255,0.05);">
+                                <div style="height: 100%; width: ${data.favorabilidadCepeda}%; border-radius: 2px; background: var(--color-cepeda);"></div>
+                              </div>
+                            </div>
+
+                            <!-- Espriella row -->
+                            <div>
+                              <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 4px;">
+                                <span style="font-family: Satoshi, sans-serif; font-size: 8px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--color-espriella);">Espriella</span>
+                                <span style="font-family: Satoshi, sans-serif; font-size: 11px; font-weight: 600; color: var(--color-espriella);">${data.favorabilidadDeLaEspriella}%</span>
+                              </div>
+                              <div style="height: 4px; border-radius: 2px; background: rgba(255,255,255,0.05);">
+                                <div style="height: 100%; width: ${data.favorabilidadDeLaEspriella}%; border-radius: 2px; background: var(--color-espriella);"></div>
+                              </div>
+                            </div>
+
+                            <!-- Winner badge -->
+                            <div style="margin-top: 12px; padding-top: 8px; border-top: 1px solid rgba(255,255,255,0.05); display: flex; align-items: center; gap: 6px;">
+                              <div style="width: 6px; height: 6px; border-radius: 50%; background: ${data.favorabilidadCepeda > data.favorabilidadDeLaEspriella ? 'var(--color-cepeda)' : 'var(--color-espriella)'};"></div>
+                              <span style="font-family: Satoshi, sans-serif; font-size: 8px; text-transform: uppercase; letter-spacing: 0.12em; color: rgba(255,255,255,0.4);">${data.favorabilidadCepeda > data.favorabilidadDeLaEspriella ? 'Cepeda lidera' : 'Espriella lidera'}</span>
+                            </div>
+                          </div>
+                        `)
+                        .addTo(map.current!);
+                }
             }
         }
     });

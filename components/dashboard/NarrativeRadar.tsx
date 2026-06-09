@@ -7,13 +7,13 @@ export function NarrativeRadar() {
   const candidates = Object.keys(narrativeData) as Array<keyof typeof narrativeData>;
 
   return (
-    <div className="p-5">
+    <div className="p-5 font-['Satoshi',sans-serif]">
       {/* Header */}
       <div className="flex items-center gap-2 mb-1">
-        <Radio size={11} style={{ color: 'var(--color-gold)', opacity: 0.7 }} />
+        <Radio size={12} className="text-gold opacity-70" />
         <div className="section-label">Radar de narrativas</div>
       </div>
-      <h2 className="display-title text-base text-[#F1F0ED] mb-4 leading-none">
+      <h2 className="display-title text-base text-white mb-4 leading-none">
         Mapa narrativo
       </h2>
 
@@ -23,60 +23,46 @@ export function NarrativeRadar() {
         {candidates.map((candidate) => {
           const data = narrativeData[candidate];
           const isCepeda = candidate.toLowerCase().includes('cepeda');
-          const accent = isCepeda ? 'var(--color-cepeda)' : 'var(--color-espriella)';
+          
+          // Tailwind-based accent colors
+          const accentClass = isCepeda ? 'text-cepeda' : 'text-espriella';
+          const borderClass = isCepeda ? 'border-cepeda/[0.15]' : 'border-espriella/[0.15]';
 
           return (
-            <div key={candidate} className="space-y-3">
+            <div key={candidate} className="space-y-4">
               {/* Candidate name */}
               <div
-                className="mono-data text-[9px] font-semibold uppercase tracking-widest pb-1.5"
-                style={{
-                  color: accent,
-                  borderBottom: `1px solid ${isCepeda ? 'rgba(16,185,129,0.15)' : 'rgba(96,165,250,0.15)'}`,
-                }}
+                className={`mono-data text-[10px] font-bold uppercase tracking-widest pb-1.5 border-b ${borderClass} ${accentClass}`}
               >
                 {candidate}
               </div>
 
-              {/* Positivo */}
-              <div className="space-y-1.5">
-                <div className="section-title" style={{ color: 'rgba(52,211,153,0.6)' }}>
-                  ↑ Positivo
-                </div>
-                <div className="flex flex-wrap gap-1">
-                  {data.positive.map((tag) => (
-                    <span key={tag} className="narrative-tag tag-positive">{tag}</span>
-                  ))}
-                </div>
-              </div>
-
-              {/* Negativo */}
-              <div className="space-y-1.5">
-                <div className="section-title" style={{ color: 'rgba(248,113,113,0.6)' }}>
-                  ↓ Negativo
-                </div>
-                <div className="flex flex-wrap gap-1">
-                  {data.negative.map((tag) => (
-                    <span key={tag} className="narrative-tag tag-negative">{tag}</span>
-                  ))}
-                </div>
-              </div>
-
-              {/* Emergente */}
-              <div className="space-y-1.5">
-                <div className="section-title" style={{ color: 'rgba(252,211,77,0.6)' }}>
-                  ◈ Emergente
-                </div>
-                <div className="flex flex-wrap gap-1">
-                  {data.emerging.map((tag) => (
-                    <span key={tag} className="narrative-tag tag-emerging">{tag}</span>
-                  ))}
-                </div>
+              {/* Narratives List */}
+              <div className="space-y-3">
+                <NarrativeList label="↑ Positivo" color="text-emerald-400/80" tags={data.positive} />
+                <NarrativeList label="↓ Negativo" color="text-red-400/80" tags={data.negative} />
+                <NarrativeList label="◈ Emergente" color="text-amber-400/80" tags={data.emerging} />
               </div>
             </div>
           );
         })}
       </div>
+    </div>
+  );
+}
+
+function NarrativeList({ label, color, tags }: { label: string; color: string; tags: string[] }) {
+  return (
+    <div className="space-y-1.5">
+      <div className={`section-title ${color}`}>{label}</div>
+      <ul className="space-y-1">
+        {tags.map((tag) => (
+          <li key={tag} className="flex items-start gap-2 text-xs text-white/80">
+            <span className="mt-1 w-1 h-1 rounded-full bg-gold/50 shrink-0" />
+            <span className="font-['Satoshi',sans-serif]">{tag}</span>
+          </li>
+        ))}
+      </ul>
     </div>
   );
 }
