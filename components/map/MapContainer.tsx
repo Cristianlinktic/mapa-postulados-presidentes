@@ -4,6 +4,7 @@ import { useEffect, useRef } from "react";
 import mapboxgl from "mapbox-gl";
 import { useStore } from "@/lib/store";
 import { mockTerritorialData } from "@/lib/data/mockData";
+import { supabase } from "@/lib/supabaseClient";
 
 const MAPBOX_TOKEN = process.env.NEXT_PUBLIC_MAPBOX_TOKEN;
 
@@ -51,12 +52,13 @@ export default function MapContainer() {
       const source = map.current.getSource('colombia') as mapboxgl.GeoJSONSource;
       
       // Basic choropleth color expression
+      // Cepeda: #D8B4FE (Light Purple), Espriella: #FB923C (Orange)
       const colorExpression: any = [
         'match',
         ['get', 'shapeID'],
         ...Object.entries(mockTerritorialData).flatMap(([id, data]) => [
           id,
-          data.favorabilidadCepeda > data.favorabilidadDeLaEspriella ? '#22c55e' : '#3b82f6' // Green for Cepeda, Blue for Espriella
+          data.favorabilidadCepeda > data.favorabilidadDeLaEspriella ? '#D8B4FE' : '#FB923C'
         ]),
         '#6b7280' // Default
       ];
@@ -113,7 +115,7 @@ export default function MapContainer() {
         hoveredStateId = null;
     });
 
-    map.current.on('click', 'colombia-layer', (e) => {
+    map.current.on('click', 'colombia-layer', async (e) => { // Changed to async
         if (e.features && e.features.length > 0) {
             const feature = e.features[0];
             const shapeID = feature.properties?.shapeID;
@@ -130,76 +132,63 @@ export default function MapContainer() {
             if (shapeID) {
                 setSelectedLocationId(shapeID);
                 
-                const data = mockTerritorialData[shapeID];
-                if (data) {
-                    new mapboxgl.Popup({ closeButton: false, className: 'intel-popup', maxWidth: '220px' })
-                        .setLngLat(e.lngLat)
-                        .setHTML(`
-                          <div style="
-                            background: var(--color-surface);
-                            border: 1px solid var(--color-gold-glow);
-                            border-radius: 12px;
-                            padding: 16px;
-                            backdrop-filter: blur(20px);
-                            font-family: 'Satoshi', sans-serif;
-                            box-shadow: 0 8px 32px rgba(0,0,0,0.5);
-                            min-width: 200px;
-                          ">
-                            <!-- Label -->
-                            <div style="
-                              font-family: Satoshi, sans-serif;
-                              font-size: 8px;
-                              font-weight: 600;
-                              letter-spacing: 0.2em;
-                              text-transform: uppercase;
-                              color: var(--color-gold);
-                              margin-bottom: 6px;
-                            ">Análisis territorial</div>
+                // Fetch directly from Supabase
+                const { data: fetchedData } = await supabase
+                    .from('territories')
+                    .select('*')
+                    .eq('shape_id', shapeID);
+                
+                const data = (fetchedData && fetchedData.length > 0) ? fetchedData[0] : null;
 
-                            <!-- Region name -->
-                            <div style="
-                              font-family: Satoshi, sans-serif;
-                              font-size: 16px;
-                              font-weight: 700;
-                              color: #ffffff;
-                              margin-bottom: 12px;
-                              line-height: 1.2;
-                            ">${data.name}</div>
+                const popupContent = data ? `
+                    <!-- Label -->
+                    <div style="font-size: 8px; font-weight: 600; letter-spacing: 0.2em; text-transform: uppercase; color: var(--color-gold); margin-bottom: 6px;">Análisis territorial</div>
+                    <!-- Region name -->
+                    <div style="font-size: 16px; font-weight: 700; color: #ffffff; margin-bottom: 12px; line-height: 1.2;">${data.name}</div>
+                    <!-- Divider -->
+                    <div style="height:1px; background: rgba(201,168,76,0.2); margin-bottom: 12px;"></div>
+                    <!-- Cepeda row -->
+                    <div style="margin-bottom: 10px;">
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 4px;">
+                            <span style="font-size: 8px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--color-cepeda);">Cepeda</span>
+                            <span style="font-size: 11px; font-weight: 600; color: var(--color-cepeda);">${data.favorabilidad_cepeda}%</span>
+                        </div>
+                        <div style="height: 4px; border-radius: 2px; background: rgba(255,255,255,0.05);">
+                            <div style="height: 100%; width: ${data.favorabilidad_cepeda}%; border-radius: 2px; background: var(--color-cepeda);"></div>
+                        </div>
+                    </div>
+                    <!-- Espriella row -->
+                    <div>
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 4px;">
+                            <span style="font-size: 8px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--color-espriella);">Espriella</span>
+                            <span style="font-size: 11px; font-weight: 600; color: var(--color-espriella);">${data.favorabilidad_espriella}%</span>
+                        </div>
+                        <div style="height: 4px; border-radius: 2px; background: rgba(255,255,255,0.05);">
+                            <div style="height: 100%; width: ${data.favorabilidad_espriella}%; border-radius: 2px; background: var(--color-espriella);"></div>
+                        </div>
+                    </div>
+                ` : `
+                    <div style="font-size: 14px; font-weight: 600; color: #ffffff; margin-bottom: 8px;">Región sin datos</div>
+                    <div style="font-size: 12px; color: rgba(255,255,255,0.7);">Completa la información en el panel derecho para visualizar el análisis.</div>
+                `;
 
-                            <!-- Divider -->
-                            <div style="height:1px; background: rgba(201,168,76,0.2); margin-bottom: 12px;"></div>
-
-                            <!-- Cepeda row -->
-                            <div style="margin-bottom: 10px;">
-                              <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 4px;">
-                                <span style="font-family: Satoshi, sans-serif; font-size: 8px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--color-cepeda);">Cepeda</span>
-                                <span style="font-family: Satoshi, sans-serif; font-size: 11px; font-weight: 600; color: var(--color-cepeda);">${data.favorabilidadCepeda}%</span>
-                              </div>
-                              <div style="height: 4px; border-radius: 2px; background: rgba(255,255,255,0.05);">
-                                <div style="height: 100%; width: ${data.favorabilidadCepeda}%; border-radius: 2px; background: var(--color-cepeda);"></div>
-                              </div>
-                            </div>
-
-                            <!-- Espriella row -->
-                            <div>
-                              <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 4px;">
-                                <span style="font-family: Satoshi, sans-serif; font-size: 8px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--color-espriella);">Espriella</span>
-                                <span style="font-family: Satoshi, sans-serif; font-size: 11px; font-weight: 600; color: var(--color-espriella);">${data.favorabilidadDeLaEspriella}%</span>
-                              </div>
-                              <div style="height: 4px; border-radius: 2px; background: rgba(255,255,255,0.05);">
-                                <div style="height: 100%; width: ${data.favorabilidadDeLaEspriella}%; border-radius: 2px; background: var(--color-espriella);"></div>
-                              </div>
-                            </div>
-
-                            <!-- Winner badge -->
-                            <div style="margin-top: 12px; padding-top: 8px; border-top: 1px solid rgba(255,255,255,0.05); display: flex; align-items: center; gap: 6px;">
-                              <div style="width: 6px; height: 6px; border-radius: 50%; background: ${data.favorabilidadCepeda > data.favorabilidadDeLaEspriella ? 'var(--color-cepeda)' : 'var(--color-espriella)'};"></div>
-                              <span style="font-family: Satoshi, sans-serif; font-size: 8px; text-transform: uppercase; letter-spacing: 0.12em; color: rgba(255,255,255,0.4);">${data.favorabilidadCepeda > data.favorabilidadDeLaEspriella ? 'Cepeda lidera' : 'Espriella lidera'}</span>
-                            </div>
-                          </div>
-                        `)
-                        .addTo(map.current!);
-                }
+                new mapboxgl.Popup({ closeButton: false, className: 'intel-popup', maxWidth: '220px' })
+                    .setLngLat(e.lngLat)
+                    .setHTML(`
+                      <div style="
+                        background: var(--color-surface);
+                        border: 1px solid var(--color-gold-glow);
+                        border-radius: 12px;
+                        padding: 16px;
+                        backdrop-filter: blur(20px);
+                        font-family: 'Satoshi', sans-serif;
+                        box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+                        min-width: 200px;
+                      ">
+                        ${popupContent}
+                      </div>
+                    `)
+                    .addTo(map.current!);
             }
         }
     });

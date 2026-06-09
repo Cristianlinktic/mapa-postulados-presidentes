@@ -1,35 +1,91 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { useStore } from "@/lib/store";
-import { Cpu } from "lucide-react";
-
-const insightMap: Record<string, { text: string; confidence: number }> = {
-  'Seguridad': {
-    text: "Alta preocupación por seguridad urbana detectada en la zona norte. Correlación del 78% con regiones de alta densidad poblacional.",
-    confidence: 94,
-  },
-  'Economía': {
-    text: "Interés creciente en propuestas de empleo juvenil en municipios del eje cafetero. Incremento de 23 puntos vs semana anterior.",
-    confidence: 87,
-  },
-  'Paz': {
-    text: "Narrativa de paz territorial gana tracción en zonas históricamente afectadas. Candidatos con discurso de reconciliación lideran en consultas.",
-    confidence: 91,
-  },
-  'General': {
-    text: "La conversación política en esta zona se encuentra altamente polarizada. Índice de fragmentación narrativa en 0.82 sobre 1.0.",
-    confidence: 82,
-  },
-};
+import { supabase } from "@/lib/supabaseClient";
+import { Cpu, Edit2, Save, X, AlertCircle } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import departments from "@/scripts/departments.json";
 
 export function AIInsights() {
   const theme = useStore((state) => state.currentTheme);
   const locationId = useStore((state) => state.selectedLocationId);
+  const [narrative, setNarrative] = useState<string>("");
+  const [isEditing, setIsEditing] = useState(false);
+  const [editValue, setEditValue] = useState("");
+  const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
 
-  const insight = insightMap[theme] ?? insightMap['General'];
+  // Look up region name
+  const dept = departments.find(d => d.shapeID === locationId);
+  const regionName = locationId ? (dept ? dept.name : 'Región desconocida') : 'General';
+
+  useEffect(() => {
+    async function fetchNarrative() {
+      setLoading(true);
+
+      // Construimos la consulta base
+      let query = supabase.from('narratives').select('*').eq('theme', theme);
+
+      if (locationId) {
+        query = query.eq('shape_id', locationId);
+      } else {
+        query = query.is('shape_id', null);
+      }
+
+      const { data } = await query.maybeSingle();
+
+      if (data) {
+        setNarrative(data.text);
+        setEditValue(data.text);
+      } else {
+        setNarrative(`No hay análisis disponible para ${locationId ? 'esta región y ' : ''}temática.`);
+        setEditValue("");
+      }
+      setLoading(false);
+    }
+    fetchNarrative();
+  }, [locationId, theme]);
+
+  const handleSave = async () => {
+    // Upsert usando la región actual (puede ser null) y el tema
+    const { error: saveError } = await supabase
+        .from('narratives')
+        .upsert({ 
+            shape_id: locationId || null, 
+            theme: theme, 
+            text: editValue 
+        }); 
+
+    if (!saveError) {
+        setNarrative(editValue);
+        setIsEditing(false);
+    } else {
+        if (saveError.code === '23503') {
+            setError("Error: Primero debes configurar los datos básicos de este departamento.");
+            setTimeout(() => setError(null), 5000);
+        } else {
+            console.error("Error guardando:", saveError);
+        }
+    }
+  };
 
   return (
-    <div className="intel-panel rounded-2xl p-5">
+    <div className="intel-panel rounded-2xl p-5 relative">
+      <AnimatePresence>
+        {error && (
+            <motion.div 
+                initial={{ opacity: 0, y: -20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -20 }}
+                className="absolute top-2 right-2 z-50 bg-red-900/90 text-white text-xs p-3 rounded-lg flex items-center gap-2 shadow-xl border border-red-500/50"
+            >
+                <AlertCircle size={16} />
+                {error}
+            </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* Header */}
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2.5">
@@ -38,48 +94,34 @@ export function AIInsights() {
           </div>
           <div>
             <div className="section-label">Análisis de IA</div>
-            <div className="mono-data text-[10px] text-gold/50">
-              Tema: {theme}
-            </div>
+            <div className="mono-data text-[10px] text-gold/50">Tema: {theme}</div>
           </div>
         </div>
-        {/* Confidence */}
-        <div className="text-right">
-          <div className="section-label mb-0.5">Confianza</div>
-          <div className="mono-data text-sm font-semibold text-gold">
-            {insight.confidence}%
-          </div>
-        </div>
+        <button onClick={() => setIsEditing(!isEditing)} className="text-white/50 hover:text-white">
+            <Edit2 size={14} />
+        </button>
       </div>
 
       <div className="gold-divider" />
 
-      {/* Insight text */}
-      <p className="text-sm leading-relaxed italic text-[#f1f0ed]/90 font-['Satoshi',sans-serif]">
-        "{insight.text}"
-      </p>
-
-      {/* Confidence bar */}
-      <div className="mt-4">
-        <div className="h-1.5 w-full bg-white/5 rounded-full overflow-hidden">
-          <div
-            className="h-full transition-all duration-1000 ease-out bg-gold"
-            style={{
-              width: `${insight.confidence}%`,
-            }}
-          />
+      {loading ? (
+        <p className="text-sm italic text-white/50 mt-2">Cargando...</p>
+      ) : isEditing ? (
+        <div className="space-y-3 mt-4">
+            <div className="flex justify-between text-xs text-white/70">
+                <span>{regionName}</span>
+                <span>Tema: {theme}</span>
+            </div>
+            <textarea value={editValue} onChange={e => setEditValue(e.target.value)} className="w-full bg-white/10 p-2 text-sm text-white rounded min-h-[100px]"/>
+            <div className="flex gap-2">
+                <button onClick={handleSave} className="flex-1 flex items-center justify-center gap-1 bg-green-600 px-3 py-1 rounded text-sm text-white font-bold"><Save size={14}/> Guardar</button>
+                <button onClick={() => setIsEditing(false)} className="flex-1 flex items-center justify-center gap-1 bg-red-600 px-3 py-1 rounded text-sm text-white font-bold"><X size={14}/> Cancelar</button>
+            </div>
         </div>
-      </div>
-
-      {/* Region tag */}
-      {locationId && (
-        <div className="mt-3 flex items-center gap-1.5">
-          <div className="w-1.5 h-1.5 rounded-full" style={{ background: 'var(--color-cepeda)' }} />
-          <span className="mono-data text-[9px] uppercase tracking-widest"
-            style={{ color: 'rgba(241,240,237,0.4)' }}>
-            Región seleccionada: {locationId}
-          </span>
-        </div>
+      ) : (
+        <p className="text-sm leading-relaxed italic text-[#f1f0ed]/90 font-['Satoshi',sans-serif] mt-2">
+            "{narrative}"
+        </p>
       )}
     </div>
   );
