@@ -19,28 +19,27 @@ export interface TerritorialData {
 
 export function TerritorialSummary() {
   const selectedLocationId = useStore((state) => state.selectedLocationId);
-  const [data, setData] = useState<TerritorialData | null>(null);
+  const currentData = useStore((state) => state.currentData);
+  const setCurrentData = useStore((state) => state.setCurrentData);
+  
   const [isEditing, setIsEditing] = useState(false);
   const [formData, setFormData] = useState<TerritorialData | null>(null);
   const [loading, setLoading] = useState(false);
-
-  const setCurrentData = useStore((state) => state.setCurrentData);
 
   const fetchData = async (isRefresh = false) => {
     if (!selectedLocationId) return;
     
     if (!isRefresh) {
         setLoading(true);
-        setData(null);
+        setCurrentData(null);
         setFormData(null);
     }
     
     const { data: fetchedData, error } = await supabase.from('territories').select('*').eq('shape_id', selectedLocationId!).maybeSingle();
     
     if (fetchedData) {
-      setData(fetchedData);
-      setFormData(fetchedData);
       setCurrentData(fetchedData);
+      setFormData(fetchedData);
     } else {
       const dept = departments.find(d => d.shapeID === selectedLocationId);
       const initialFormData = {
@@ -76,9 +75,8 @@ export function TerritorialSummary() {
         console.error('Error saving territory:', error);
         setLoading(false);
     } else if (savedData) { 
-      setData(savedData);
-      setFormData(savedData);
       setCurrentData(savedData);
+      setFormData(savedData);
       setIsEditing(false); 
       setLoading(false);
     }
@@ -94,15 +92,15 @@ export function TerritorialSummary() {
   }
 
   // Unified Form for Edit and Create
-  if (isEditing || (!data && selectedLocationId && formData)) {
+  if (isEditing || (!currentData && selectedLocationId && formData)) {
     if (!formData) return null;
-    const isCreating = !data;
+    const isCreating = !currentData;
     return (
         <div className="p-5 space-y-4">
             <div className="flex items-center gap-2 mb-2">
                 <div className={`w-2 h-2 rounded-full ${isCreating ? 'bg-amber-500 animate-pulse' : 'bg-[--color-accent]'}`} />
                 <h3 className="font-bold text-[--color-text-primary] text-sm uppercase tracking-wider">
-                    {isCreating ? 'Configurar región' : `Editar ${data?.name}`}
+                    {isCreating ? 'Configurar región' : `Editar ${currentData?.name}`}
                 </h3>
             </div>
             
@@ -147,7 +145,7 @@ export function TerritorialSummary() {
     )
   }
 
-  if (!data) {
+  if (!currentData) {
     return (
       <div className="p-6 flex flex-col items-center justify-center gap-3 text-center py-8">
         <div className="w-10 h-10 rounded-full flex items-center justify-center"
@@ -164,8 +162,8 @@ export function TerritorialSummary() {
     );
   }
 
-  const cepedaLeads = data.favorabilidad_cepeda > data.favorabilidad_espriella;
-  const gap = Math.abs(data.favorabilidad_cepeda - data.favorabilidad_espriella);
+  const cepedaLeads = currentData.favorabilidad_cepeda > currentData.favorabilidad_espriella;
+  const gap = Math.abs(currentData.favorabilidad_cepeda - currentData.favorabilidad_espriella);
 
   return (
     <div className="p-5">
@@ -173,7 +171,7 @@ export function TerritorialSummary() {
         <div>
           <div className="section-label mb-1 text-[--color-text-secondary]">Análisis territorial</div>
           <div className="flex items-center gap-2">
-            <h2 className="display-title text-lg text-[--color-text-primary] leading-tight">{data.name}</h2>
+            <h2 className="display-title text-lg text-[--color-text-primary] leading-tight">{currentData.name}</h2>
             <button className="cursor-pointer" onClick={() => setIsEditing(true)}><Edit2 size={14} className="text-[--color-text-muted] hover:text-[--color-text-primary]"/></button>
           </div>
         </div>
@@ -191,11 +189,11 @@ export function TerritorialSummary() {
       <div className="grid grid-cols-2 gap-x-5 gap-y-4 mb-4">
         <StatBlock
           label="Población"
-          value={data.poblacion.toLocaleString('es-CO')}
+          value={currentData.poblacion.toLocaleString('es-CO')}
         />
         <StatBlock
           label="Censo Electoral"
-          value={data.censo_electoral.toLocaleString('es-CO')}
+          value={currentData.censo_electoral.toLocaleString('es-CO')}
         />
       </div>
 
@@ -206,14 +204,14 @@ export function TerritorialSummary() {
               Cepeda
             </span>
             <span className="mono-data text-sm font-black text-[--color-cepeda-text]">
-              {data.favorabilidad_cepeda}%
+              {currentData.favorabilidad_cepeda}%
             </span>
           </div>
           <div className="h-2.5 w-full bg-[--color-void] rounded-full overflow-hidden relative border border-[--color-panel-border]">
             <div
               className="h-full transition-all duration-1000 ease-out"
               style={{
-                width: `${data.favorabilidad_cepeda}%`,
+                width: `${currentData.favorabilidad_cepeda}%`,
                 background: 'linear-gradient(to right, var(--color-cepeda), var(--color-cepeda))',
                 boxShadow: '0 0 12px var(--color-cepeda)'
               }}
@@ -227,14 +225,14 @@ export function TerritorialSummary() {
               De la Espriella
             </span>
             <span className="mono-data text-sm font-black text-[--color-espriella-text]">
-              {data.favorabilidad_espriella}%
+              {currentData.favorabilidad_espriella}%
             </span>
           </div>
           <div className="h-2.5 w-full bg-[--color-void] rounded-full overflow-hidden relative border border-[--color-panel-border]">
             <div
               className="h-full transition-all duration-1000 ease-out"
               style={{
-                width: `${data.favorabilidad_espriella}%`,
+                width: `${currentData.favorabilidad_espriella}%`,
                 background: 'linear-gradient(to right, var(--color-espriella), var(--color-espriella))',
                 boxShadow: '0 0 12px var(--color-espriella)'
               }}

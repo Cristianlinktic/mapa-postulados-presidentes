@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { TerritorialData } from "@/components/dashboard/TerritorialSummary";
+import mapboxgl from "mapbox-gl";
 
 interface AppState {
   selectedLocationId: string | null;
@@ -8,6 +9,11 @@ interface AppState {
   setCurrentData: (data: TerritorialData | null) => void;
   currentTheme: 'General' | 'Seguridad' | 'Economía' | 'Paz';
   setCurrentTheme: (theme: 'General' | 'Seguridad' | 'Economía' | 'Paz') => void;
+  // Map helpers
+  mapInstance: mapboxgl.Map | null;
+  setMapInstance: (map: mapboxgl.Map | null) => void;
+  activePopup: mapboxgl.Popup | null;
+  setActivePopup: (popup: mapboxgl.Popup | null) => void;
 }
 
 export const useStore = create<AppState>((set) => ({
@@ -17,4 +23,8 @@ export const useStore = create<AppState>((set) => ({
   setCurrentData: (data) => set({ currentData: data }),
   currentTheme: 'General',
   setCurrentTheme: (theme) => set({ currentTheme: theme }),
+  mapInstance: null,
+  setMapInstance: (map) => set({ mapInstance: map }),
+  activePopup: null,
+  setActivePopup: (popup) => set({ activePopup: popup }),
 }));

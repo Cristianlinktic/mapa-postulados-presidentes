@@ -17,6 +17,11 @@ export default function MapContainer() {
   const mapContainer = useRef<HTMLDivElement | null>(null);
   const map = useRef<mapboxgl.Map | null>(null);
   const setSelectedLocationId = useStore((state) => state.setSelectedLocationId);
+  const setMapInstance = useStore((state) => state.setMapInstance);
+  const setActivePopup = useStore((state) => state.setActivePopup);
+  const activePopup = useStore((state) => state.activePopup);
+  const currentData = useStore((state) => state.currentData);
+  
   const [territorialData, setTerritorialData] = useState<any[]>([]);
 
   const fetchTerritorialData = async () => {
@@ -39,7 +44,7 @@ export default function MapContainer() {
           d.shape_id,
           d.favorabilidad_cepeda > d.favorabilidad_espriella ? '#c084fc' : '#f97316'
         ]),
-        '#e2e8f0' // Color por defecto para deptos sin datos en DB
+        '#e2e8f0'
       ];
     } else {
       colorExpression = '#e2e8f0';
@@ -57,22 +62,26 @@ export default function MapContainer() {
 
   useEffect(() => {
     fetchTerritorialData();
-
-    const channel = supabase
-      .channel('schema-db-changes')
-      .on(
-        'postgres_changes',
-        { event: '*', schema: 'public', table: 'territories' },
-        () => {
-          fetchTerritorialData();
-        }
-      )
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
+    // Se elimina el canal de Supabase para evitar conflictos.
+    // La reactividad se manejará centralizadamente por el store 'currentData'.
   }, []);
+
+  useEffect(() => {
+    // Escuchar cambios en currentData (del store) para actualizar el popup y datos locales
+    if (currentData) {
+        setTerritorialData(prev => {
+            const index = prev.findIndex(t => t.shape_id === currentData.shape_id);
+            if (index === -1) return [...prev, currentData];
+            const next = [...prev];
+            next[index] = currentData;
+            return next;
+        });
+
+        if (activePopup) {
+            activePopup.setHTML(createPopupHTML(currentData));
+        }
+    }
+  }, [currentData, activePopup]);
 
   useEffect(() => {
     updateMapColors(territorialData);
@@ -87,9 +96,11 @@ export default function MapContainer() {
     map.current = new mapboxgl.Map({
       container: mapContainer.current,
       style: isDark ? "mapbox://styles/mapbox/dark-v11" : "mapbox://styles/mapbox/light-v11",
-      center: [-74.0721, 4.7110], // Bogotá
+      center: [-74.0721, 4.7110],
       zoom: 5,
     });
+
+    setMapInstance(map.current);
 
     const addMapLayers = () => {
       if (!map.current) return;
@@ -121,7 +132,6 @@ export default function MapContainer() {
         }
       });
 
-      // Initial color update
       updateMapColors(territorialData);
     };
 
@@ -174,50 +184,15 @@ export default function MapContainer() {
                     .eq('shape_id', shapeID);
                 
                 const data = (fetchedData && fetchedData.length > 0) ? fetchedData[0] : null;
+                const content = createPopupHTML(data);
 
-                const popupContent = data ? `
-                    <div style="font-size: 8px; font-weight: 600; letter-spacing: 0.2em; text-transform: uppercase; color: var(--color-accent); margin-bottom: 6px;">Análisis territorial</div>
-                    <div style="font-size: 16px; font-weight: 700; color: var(--color-text-primary); margin-bottom: 12px; line-height: 1.2;">${data.name}</div>
-                    <div style="height:1px; background: var(--color-panel-border); margin-bottom: 12px;"></div>
-                    <div style="margin-bottom: 10px;">
-                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 4px;">
-                            <span style="font-size: 8px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--color-cepeda);">Cepeda</span>
-                            <span style="font-size: 11px; font-weight: 600; color: var(--color-text-primary);">${data.favorabilidad_cepeda}%</span>
-                        </div>
-                        <div style="height: 4px; border-radius: 2px; background: var(--color-panel-border);">
-                            <div style="height: 100%; width: ${data.favorabilidad_cepeda}%; border-radius: 2px; background: var(--color-cepeda);"></div>
-                        </div>
-                    </div>
-                    <div>
-                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 4px;">
-                            <span style="font-size: 8px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--color-espriella);">Espriella</span>
-                            <span style="font-size: 11px; font-weight: 600; color: var(--color-text-primary);">${data.favorabilidad_espriella}%</span>
-                        </div>
-                        <div style="height: 4px; border-radius: 2px; background: var(--color-panel-border);">
-                            <div style="height: 100%; width: ${data.favorabilidad_espriella}%; border-radius: 2px; background: var(--color-espriella);"></div>
-                        </div>
-                    </div>
-                ` : `
-                    <div style="font-size: 14px; font-weight: 600; color: var(--color-text-primary); margin-bottom: 8px;">Región sin datos</div>
-                    <div style="font-size: 12px; color: var(--color-text-secondary);">Completa la información en el panel derecho para visualizar el análisis.</div>
-                `;
-
-                new mapboxgl.Popup({ closeButton: false, className: 'intel-popup', maxWidth: '220px' })
+                const popup = new mapboxgl.Popup({ closeButton: false, className: 'intel-popup', maxWidth: '220px' })
                     .setLngLat(e.lngLat)
-                    .setHTML(`
-                      <div style="
-                        background: var(--color-surface);
-                        border: 1px solid var(--color-panel-border);
-                        border-radius: 12px;
-                        padding: 16px;
-                        font-family: 'Satoshi', sans-serif;
-                        box-shadow: var(--color-panel-shadow);
-                        min-width: 200px;
-                      ">
-                        ${popupContent}
-                      </div>
-                    `)
+                    .setHTML(content)
                     .addTo(map.current!);
+                
+                setActivePopup(popup);
+                popup.on('close', () => setActivePopup(null));
             }
         }
     });
@@ -231,6 +206,8 @@ export default function MapContainer() {
     return () => {
         observer.disconnect();
         map.current?.remove();
+        setMapInstance(null);
+        setActivePopup(null);
     };
   }, []);
 
@@ -239,4 +216,47 @@ export default function MapContainer() {
       <div ref={mapContainer} className="h-full w-full" />
     </div>
   );
+}
+
+export function createPopupHTML(data: any) {
+    const popupContent = data ? `
+        <div style="font-size: 8px; font-weight: 600; letter-spacing: 0.2em; text-transform: uppercase; color: var(--color-accent); margin-bottom: 6px;">Análisis territorial</div>
+        <div style="font-size: 16px; font-weight: 700; color: var(--color-text-primary); margin-bottom: 12px; line-height: 1.2;">${data.name}</div>
+        <div style="height:1px; background: var(--color-panel-border); margin-bottom: 12px;"></div>
+        <div style="margin-bottom: 10px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 4px;">
+                <span style="font-size: 8px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--color-cepeda);">Cepeda</span>
+                <span style="font-size: 11px; font-weight: 600; color: var(--color-text-primary);">${data.favorabilidad_cepeda}%</span>
+            </div>
+            <div style="height: 4px; border-radius: 2px; background: var(--color-panel-border);">
+                <div style="height: 100%; width: ${data.favorabilidad_cepeda}%; border-radius: 2px; background: var(--color-cepeda);"></div>
+            </div>
+        </div>
+        <div>
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 4px;">
+                <span style="font-size: 8px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--color-espriella);">Espriella</span>
+                <span style="font-size: 11px; font-weight: 600; color: var(--color-text-primary);">${data.favorabilidad_espriella}%</span>
+            </div>
+            <div style="height: 4px; border-radius: 2px; background: var(--color-panel-border);">
+                <div style="height: 100%; width: ${data.favorabilidad_espriella}%; border-radius: 2px; background: var(--color-espriella);"></div>
+            </div>
+        </div>
+    ` : `
+        <div style="font-size: 14px; font-weight: 600; color: var(--color-text-primary); margin-bottom: 8px;">Región sin datos</div>
+        <div style="font-size: 12px; color: var(--color-text-secondary);">Completa la información en el panel derecho para visualizar el análisis.</div>
+    `;
+
+    return `
+      <div style="
+        background: var(--color-surface);
+        border: 1px solid var(--color-panel-border);
+        border-radius: 12px;
+        padding: 16px;
+        font-family: 'Satoshi', sans-serif;
+        box-shadow: var(--color-panel-shadow);
+        min-width: 200px;
+      ">
+        ${popupContent}
+      </div>
+    `;
 }

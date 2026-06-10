@@ -30,7 +30,7 @@ export default function RootLayout({
         jetbrains.variable
       )}
     >
-      <body className="min-h-full flex flex-col bg-[--color-void] text-[--color-text-primary] font-sans antialiased overflow-hidden">
+      <body className="min-h-full flex flex-col bg-[--color-void] text-[--color-text-primary] font-sans antialiased overflow-hidden" suppressHydrationWarning>
         {/* Grain overlay for cinematic texture */}
         <div className="grain-overlay" aria-hidden="true" />
         {children}
