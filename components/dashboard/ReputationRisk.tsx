@@ -25,15 +25,15 @@ export function ReputationRisk() {
   }, [selectedLocationId]);
 
   async function fetchRisks() {
-    const { data } = await supabase.from('reputation_risks').select('*').eq('shape_id', selectedLocationId);
+    const { data } = await supabase.from('reputation_risks').select('*').eq('shape_id', selectedLocationId!);
     if (data && data.length > 0) {
       setRisks(data as RiskData[]);
       setEditRisks(data as RiskData[]);
     } else {
       // Inicializar con valores por defecto si no existen
       const defaultRisks: RiskData[] = [
-        { id: crypto.randomUUID(), shape_id: selectedLocationId, candidate_name: 'Cepeda', risk_level: 'Medio', top_attacks: [] },
-        { id: crypto.randomUUID(), shape_id: selectedLocationId, candidate_name: 'Espriella', risk_level: 'Medio', top_attacks: [] }
+        { id: crypto.randomUUID(), shape_id: selectedLocationId!, candidate_name: 'Cepeda', risk_level: 'Medio', top_attacks: [] },
+        { id: crypto.randomUUID(), shape_id: selectedLocationId!, candidate_name: 'Espriella', risk_level: 'Medio', top_attacks: [] }
       ];
       setRisks(defaultRisks);
       setEditRisks(defaultRisks);

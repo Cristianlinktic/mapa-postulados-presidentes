@@ -26,14 +26,14 @@ export function NarrativeRadar() {
   }, [selectedLocationId]);
 
   async function fetchNarrativeItems() {
-    const { data } = await supabase.from('narrative_radar_items').select('*').eq('shape_id', selectedLocationId);
+    const { data } = await supabase.from('narrative_radar_items').select('*').eq('shape_id', selectedLocationId!);
     setItems(data || []);
   }
 
   const addItem = async (candidate: string, category: NarrativeItem['category']) => {
     const newItem = { 
         id: crypto.randomUUID(),
-        shape_id: selectedLocationId, 
+        shape_id: selectedLocationId!, 
         candidate_name: candidate, 
         category, 
         text: 'Nuevo ítem' 

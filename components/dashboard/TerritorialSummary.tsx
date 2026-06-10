@@ -6,7 +6,7 @@ import { useStore } from "@/lib/store";
 import { MapPin, Edit2, Save, X } from "lucide-react";
 import departments from "@/scripts/departments.json";
 
-interface TerritorialData {
+export interface TerritorialData {
   shape_id: string;
   name: string;
   poblacion: number;
@@ -31,7 +31,7 @@ export function TerritorialSummary() {
       setData(null);
       setFormData(null);
       
-      const { data: fetchedData, error } = await supabase.from('territories').select('*').eq('shape_id', selectedLocationId).maybeSingle();
+      const { data: fetchedData, error } = await supabase.from('territories').select('*').eq('shape_id', selectedLocationId!).maybeSingle();
       
       if (fetchedData) {
         setData(fetchedData);
@@ -39,7 +39,7 @@ export function TerritorialSummary() {
       } else {
         const dept = departments.find(d => d.shapeID === selectedLocationId);
         setFormData({
-            shape_id: selectedLocationId,
+            shape_id: selectedLocationId!,
             name: dept?.name || 'Desconocido',
             poblacion: 0,
             censo_electoral: 0,

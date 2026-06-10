@@ -31,15 +31,15 @@ export function PresidentialComparison() {
       const { data } = await supabase
         .from('candidates')
         .select('*')
-        .eq('shape_id', selectedLocationId);
+        .eq('shape_id', selectedLocationId!);
 
       if (data && data.length > 0) {
         setCandidates(data as CandidateData[]);
         setEditCandidates(data as CandidateData[]);
       } else {
         const defaultCandidates = [
-          { id: crypto.randomUUID(), name: 'Iván Cepeda', shape_id: selectedLocationId, favorabilidad: 0, negatividad: 0, engagement: 0, alcance: 0, riesgo: 'Medio' },
-          { id: crypto.randomUUID(), name: 'Abelardo de la Espriella', shape_id: selectedLocationId, favorabilidad: 0, negatividad: 0, engagement: 0, alcance: 0, riesgo: 'Medio' }
+          { id: crypto.randomUUID(), name: 'Iván Cepeda', shape_id: selectedLocationId!, favorabilidad: 0, negatividad: 0, engagement: 0, alcance: 0, riesgo: 'Medio' },
+          { id: crypto.randomUUID(), name: 'Abelardo de la Espriella', shape_id: selectedLocationId!, favorabilidad: 0, negatividad: 0, engagement: 0, alcance: 0, riesgo: 'Medio' }
         ];
         setCandidates(defaultCandidates as CandidateData[]);
         setEditCandidates(defaultCandidates as CandidateData[]);
@@ -50,7 +50,7 @@ export function PresidentialComparison() {
 
   const handleSave = async () => {
     for (const cand of editCandidates) {
-      await supabase.from('candidates').upsert({ ...cand, shape_id: selectedLocationId });
+      await supabase.from('candidates').upsert({ ...cand, shape_id: selectedLocationId! });
     }
     setCandidates(editCandidates);
     setIsEditing(false);
