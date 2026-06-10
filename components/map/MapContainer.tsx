@@ -106,7 +106,7 @@ export default function MapContainer() {
     try {
       const mapInstance = new mapboxgl.Map({
         container: mapContainer.current,
-        style: "mapbox://styles/mapbox/light-v11",
+        style: "mapbox://styles/felipe2507/cmq8n6tvk003601s340eecepo",
         center: [-74.0721, 4.7110],
         zoom: 5,
       });
