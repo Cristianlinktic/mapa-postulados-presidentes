@@ -115,7 +115,7 @@ export function NarrativeRadar() {
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2"><Radio className="text-[--color-accent] opacity-70" size={12}/><div className="section-label">Radar de narrativas</div></div>
         {isAdmin && (
-          <button className="cursor-pointer" onClick={() => setIsEditing(!isEditing)}><Edit2 size={14} className="text-[--color-text-muted] hover:text-[--color-text-primary]"/></button>
+          <button className="cursor-pointer p-2 rounded-lg bg-emerald-500/10 hover:bg-emerald-500/20 transition-colors" onClick={() => setIsEditing(!isEditing)}><Edit2 size={14} className="text-emerald-500"/></button>
         )}
       </div>
       

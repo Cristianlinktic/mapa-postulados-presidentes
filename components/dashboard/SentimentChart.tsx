@@ -75,7 +75,7 @@ export function SentimentChart() {
           <div className="section-label text-[--color-text-secondary]">Evolución de sentimiento</div>
         </div>
         {isAdmin && (
-          <button onClick={() => setIsEditing(!isEditing)} className="text-[--color-text-muted] hover:text-[--color-text-primary] cursor-pointer">
+          <button onClick={() => setIsEditing(!isEditing)} className="cursor-pointer p-2 rounded-lg bg-emerald-500/10 hover:bg-emerald-500/20 transition-colors text-emerald-500">
             <Edit2 size={14} />
           </button>
         )}

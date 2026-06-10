@@ -47,8 +47,8 @@ export function TrendPulse() {
     <div className="intel-panel rounded-xl px-5 py-3 w-full overflow-hidden shrink-0 shadow-sm relative font-['Satoshi',sans-serif]">
       {isAdmin && (
         <button
-          onClick={() => setIsEditing(!isEditing)} 
-          className="cursor-pointer absolute top-2 right-2 text-[--color-text-muted] hover:text-[--color-text-primary] z-10"
+          onClick={() => setIsEditing(!isEditing)}
+          className="cursor-pointer absolute top-2 right-2 p-2 rounded-lg bg-emerald-500/10 hover:bg-emerald-500/20 transition-colors text-emerald-500 z-10"
         >
           <Edit2 size={12}/>
         </button>

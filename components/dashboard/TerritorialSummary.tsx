@@ -180,8 +180,8 @@ export function TerritorialSummary() {
            <div className="flex items-center gap-2">
              <h2 className="display-title text-lg text-[--color-text-primary] leading-tight">{currentData.name}</h2>
              {isAdmin && (
-               <button className="cursor-pointer" onClick={() => setIsEditing(true)}>
-                 <Edit2 size={14} className="text-[--color-text-muted] hover:text-[--color-text-primary]"/>
+               <button className="cursor-pointer p-2 rounded-lg bg-emerald-500/10 hover:bg-emerald-500/20 transition-colors" onClick={() => setIsEditing(true)}>
+                 <Edit2 size={14} className="text-emerald-500"/>
                </button>
              )}
            </div>
