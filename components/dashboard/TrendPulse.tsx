@@ -17,6 +17,7 @@ export function TrendPulse() {
   const [trends, setTrends] = useState<Trend[]>([]);
   const [isEditing, setIsEditing] = useState(false);
   const [editTrends, setEditTrends] = useState<Trend[]>([]);
+  const [error, setError] = useState<string | null>(null); // State para el error
   const user = useStore((state) => state.user);
 
   const isAdmin = user?.role === 'admin';
@@ -35,12 +36,29 @@ export function TrendPulse() {
 
   const handleSave = async () => {
     if (!isAdmin) return;
-    // Basic upsert logic
-    for (const trend of editTrends) {
-      await supabase.from('trends').upsert(trend);
+    setError(null); // Reset error
+
+    // Verificar duplicados en el frontend
+    const tags = editTrends.map(t => t.tag);
+    const hasDuplicates = new Set(tags).size !== tags.length;
+    
+    if (hasDuplicates) {
+        setError("Error: Hay tendencias con nombres duplicados. Por favor, asegúrate de que cada hashtag sea único.");
+        return;
     }
-    setTrends(editTrends);
-    setIsEditing(false);
+
+    console.log("Saving trends:", editTrends);
+    
+    // Usar una operación de upsert masiva o iterativa con manejo de errores
+    const { error } = await supabase.from('trends').upsert(editTrends);
+    
+    if (error) {
+        console.error("Error saving trends:", error);
+        setError("Error al guardar: " + error.message);
+    } else {
+        setTrends(editTrends);
+        setIsEditing(false);
+    }
   };
 
   return (
@@ -55,8 +73,13 @@ export function TrendPulse() {
       )}
 
       {showEditMode ? (
-
         <div className="space-y-2 p-2 bg-[--color-surface-elevated] border border-[--color-panel-border] rounded mt-4">
+            {error && (
+                <div className="bg-red-500/20 border border-red-500/50 text-red-600 p-3 rounded text-xs font-bold flex items-center justify-between">
+                    <span className="flex items-center gap-2">{error}</span>
+                    <X size={14} className="cursor-pointer hover:text-red-800" onClick={() => setError(null)}/>
+                </div>
+            )}
             {editTrends.map((t, i) => (
                 <div key={i} className="flex gap-2 text-xs items-center">
                     <input className="bg-[--color-surface] border border-[--color-panel-border] p-1 rounded flex-1 text-[--color-text-primary]" value={t.tag} onChange={e => {
@@ -64,6 +87,21 @@ export function TrendPulse() {
                         newTrends[i].tag = e.target.value;
                         setEditTrends(newTrends);
                     }}/>
+                    <input type="number" className="bg-[--color-surface] border border-[--color-panel-border] p-1 rounded w-12 text-[--color-text-primary]" value={t.velocity || 0} onChange={e => {
+                        const newTrends = [...editTrends];
+                        const val = parseFloat(e.target.value);
+                        newTrends[i].velocity = isNaN(val) ? 0 : val;
+                        setEditTrends(newTrends);
+                    }}/>
+                    <select className="bg-[--color-surface] border border-[--color-panel-border] p-1 rounded text-[--color-text-primary]" value={t.direction} onChange={e => {
+                        const newTrends = [...editTrends];
+                        newTrends[i].direction = e.target.value as 'up' | 'down' | 'stable';
+                        setEditTrends(newTrends);
+                    }}>
+                        <option value="up">Subiendo</option>
+                        <option value="down">Bajando</option>
+                        <option value="stable">Estable</option>
+                    </select>
                     <button onClick={() => {
                         const newTrends = editTrends.filter((_, idx) => idx !== i);
                         setEditTrends(newTrends);
@@ -85,8 +123,12 @@ export function TrendPulse() {
                 <div key={index} className="flex items-center gap-2.5">
                     <span className="mono-data text-[10px] text-[--color-text-muted]">//</span>
                     <span className="mono-data text-xs text-[--color-text-primary]">{trend.tag}</span>
-                    <span className={`flex items-center gap-0.5 mono-data text-[10px] ${trend.direction === 'up' ? 'text-emerald-500' : 'text-red-500'}`}>
-                    {trend.direction === 'up' ? <TrendingUp size={9} /> : <TrendingDown size={9} />}
+                    <span className={`flex items-center gap-0.5 mono-data text-[10px] ${trend.direction === 'up' ? 'text-emerald-500' : trend.direction === 'down' ? 'text-red-500' : 'text-black'}`}>
+                    {trend.direction === 'up' ? <TrendingUp size={9} /> : trend.direction === 'down' ? <TrendingDown size={9} /> : (
+                        <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M5 12h14"/>
+                        </svg>
+                    )}
                     {Math.abs(trend.velocity)}%
                     </span>
                 </div>
