@@ -24,6 +24,7 @@ export default function MapContainer() {
   const currentData = useStore((state) => state.currentData);
 
   const [territorialData, setTerritorialData] = useState<any[]>([]);
+  const pendingData = useRef<any[] | null>(null);
 
   const updateMapColors = (data: any[]) => {
     if (!map.current || !layersAdded.current || !map.current.getLayer('colombia-layer')) {
@@ -67,8 +68,14 @@ export default function MapContainer() {
       console.log("MapContainer: Territorial data fetched:", data);
       if (data && data.length > 0) {
         setTerritorialData(data);
-        // Intentar actualizar colores inmediatamente después de obtener datos
-        updateMapColors(data);
+        // Intentar actualizar colores si el mapa ya está listo
+        if (map.current && layersAdded.current) {
+            console.log("MapContainer: Data ready, layers ready, applying colors");
+            updateMapColors(data);
+        } else {
+            console.log("MapContainer: Data ready, layers not ready, pending data");
+            pendingData.current = data;
+        }
       }
     };
     initData();
@@ -258,7 +265,13 @@ export default function MapContainer() {
 
           console.log("MapContainer: Layers added successfully");
 
-          updateMapColors(territorialData);
+          // Aplicar datos pendientes si existen o los datos actuales
+          const dataToApply = pendingData.current || territorialData;
+          if (dataToApply && dataToApply.length > 0) {
+            console.log("MapContainer: Applying data to colors after layers added");
+            updateMapColors(dataToApply);
+            pendingData.current = null;
+          }
         } catch (error) {
           console.error("Error creating source/layers:", error);
         }
