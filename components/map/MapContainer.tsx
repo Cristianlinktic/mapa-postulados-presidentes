@@ -33,33 +33,24 @@ export default function MapContainer() {
   };
 
   const updateMapColors = (data: any[]) => {
-    if (!map.current || !layersAdded.current) {
-      console.log("MapContainer: updateMapColors skipped because map or layers are not ready");
+    if (!map.current || !layersAdded.current || !map.current.getLayer('colombia-layer')) {
       return;
     }
-    if (!map.current.getLayer('colombia-layer')) {
-      console.log("MapContainer: updateMapColors skipped because colombia-layer doesn't exist yet");
-      return;
-    }
+
+    if (data.length === 0) return;
 
     console.log("MapContainer: updateMapColors executing with", data.length, "items");
     let colorExpression: any;
 
-
-
-    if (data.length > 0) {
-      colorExpression = [
-        'match',
-        ['get', 'shapeID'],
-        ...data.flatMap((d) => [
-          d.shape_id,
-          d.favorabilidad_cepeda > d.favorabilidad_espriella ? '#c084fc' : '#f97316'
-        ]),
-        '#e2e8f0'
-      ];
-    } else {
-      colorExpression = '#e2e8f0';
-    }
+    colorExpression = [
+      'match',
+      ['get', 'shapeID'],
+      ...data.flatMap((d) => [
+        d.shape_id,
+        d.favorabilidad_cepeda > d.favorabilidad_espriella ? '#c084fc' : '#f97316'
+      ]),
+      '#e2e8f0'
+    ];
 
     map.current.setPaintProperty('colombia-layer', 'fill-color', [
       'case',
@@ -73,12 +64,9 @@ export default function MapContainer() {
 
   useEffect(() => {
     fetchTerritorialData();
-    // Se elimina el canal de Supabase para evitar conflictos.
-    // La reactividad se manejará centralizadamente por el store 'currentData'.
   }, []);
 
   useEffect(() => {
-    // Escuchar cambios en currentData (del store) para actualizar el popup y datos locales
     if (currentData) {
       setTerritorialData(prev => {
         const index = prev.findIndex(t => t.shape_id === currentData.shape_id);
@@ -94,8 +82,11 @@ export default function MapContainer() {
     }
   }, [currentData, activePopup]);
 
+  // Esta effect depende de territorialData y se asegura de que solo actúe si hay datos
   useEffect(() => {
-    updateMapColors(territorialData);
+    if (territorialData.length > 0) {
+      updateMapColors(territorialData);
+    }
   }, [territorialData]);
 
   useEffect(() => {
