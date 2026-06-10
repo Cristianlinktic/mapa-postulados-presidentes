@@ -25,13 +25,6 @@ export default function MapContainer() {
 
   const [territorialData, setTerritorialData] = useState<any[]>([]);
 
-  const fetchTerritorialData = async () => {
-    const { data } = await supabase.from('territories').select('*');
-    if (data) {
-      setTerritorialData(data);
-    }
-  };
-
   const updateMapColors = (data: any[]) => {
     if (!map.current || !layersAdded.current || !map.current.getLayer('colombia-layer')) {
       return;
@@ -63,31 +56,23 @@ export default function MapContainer() {
   };
 
   useEffect(() => {
-    fetchTerritorialData();
-  }, []);
-
-  useEffect(() => {
-    if (currentData) {
-      setTerritorialData(prev => {
-        const index = prev.findIndex(t => t.shape_id === currentData.shape_id);
-        if (index === -1) return [...prev, currentData];
-        const next = [...prev];
-        next[index] = currentData;
-        return next;
-      });
-
-      if (activePopup) {
-        activePopup.setHTML(createPopupHTML(currentData));
+    // Definir función interna para poder llamar a fetch y luego actualizar colores
+    const initData = async () => {
+      console.log("MapContainer: Initializing data fetch...");
+      const { data, error } = await supabase.from('territories').select('*');
+      if (error) {
+        console.error("MapContainer: Error fetching territorial data:", error);
+        return;
       }
-    }
-  }, [currentData, activePopup]);
-
-  // Esta effect depende de territorialData y se asegura de que solo actúe si hay datos
-  useEffect(() => {
-    if (territorialData.length > 0) {
-      updateMapColors(territorialData);
-    }
-  }, [territorialData]);
+      console.log("MapContainer: Territorial data fetched:", data);
+      if (data && data.length > 0) {
+        setTerritorialData(data);
+        // Intentar actualizar colores inmediatamente después de obtener datos
+        updateMapColors(data);
+      }
+    };
+    initData();
+  }, []);
 
   useEffect(() => {
     if (map.current || !mapContainer.current) return;
