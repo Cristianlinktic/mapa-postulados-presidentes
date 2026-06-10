@@ -78,7 +78,7 @@ export function AIInsights() {
                 initial={{ opacity: 0, y: -20 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -20 }}
-                className="absolute top-2 right-2 z-50 bg-red-900/90 text-white text-xs p-3 rounded-lg flex items-center gap-2 shadow-xl border border-red-500/50"
+                className="absolute top-2 right-2 z-50 bg-[--color-alert] text-white text-xs p-3 rounded-lg flex items-center gap-2 shadow-xl border border-[--color-panel-border]"
             >
                 <AlertCircle size={16} />
                 {error}
@@ -89,37 +89,37 @@ export function AIInsights() {
       {/* Header */}
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2.5">
-          <div className="w-7 h-7 rounded-lg flex items-center justify-center bg-gold/[0.1] border border-gold/[0.2]">
-            <Cpu size={13} className="text-gold" />
+          <div className="w-7 h-7 rounded-lg flex items-center justify-center bg-[--color-accent-dim] border border-[--color-accent]/20">
+            <Cpu size={13} className="text-[--color-accent]" />
           </div>
           <div>
             <div className="section-label">Análisis de IA</div>
-            <div className="mono-data text-[10px] text-gold/50">Tema: {theme}</div>
+            <div className="mono-data text-[10px] text-[--color-text-secondary]">Tema: {theme}</div>
           </div>
         </div>
-        <button onClick={() => setIsEditing(!isEditing)} className="text-white/50 hover:text-white">
+        <button onClick={() => setIsEditing(!isEditing)} className="text-[--color-text-muted] hover:text-[--color-text-primary]">
             <Edit2 size={14} />
         </button>
       </div>
 
-      <div className="gold-divider" />
+      <div className="h-px bg-[--color-panel-border] my-4" />
 
       {loading ? (
-        <p className="text-sm italic text-white/50 mt-2">Cargando...</p>
+        <p className="text-sm italic text-[--color-text-secondary] mt-2">Cargando...</p>
       ) : isEditing ? (
         <div className="space-y-3 mt-4">
-            <div className="flex justify-between text-xs text-white/70">
+            <div className="flex justify-between text-xs text-[--color-text-secondary]">
                 <span>{regionName}</span>
                 <span>Tema: {theme}</span>
             </div>
-            <textarea value={editValue} onChange={e => setEditValue(e.target.value)} className="w-full bg-white/10 p-2 text-sm text-white rounded min-h-[100px]"/>
+            <textarea value={editValue} onChange={e => setEditValue(e.target.value)} className="w-full bg-[--color-surface] p-2 text-sm text-[--color-text-primary] border border-[--color-panel-border] rounded min-h-[100px]"/>
             <div className="flex gap-2">
-                <button onClick={handleSave} className="flex-1 flex items-center justify-center gap-1 bg-green-600 px-3 py-1 rounded text-sm text-white font-bold"><Save size={14}/> Guardar</button>
+                <button onClick={handleSave} className="flex-1 flex items-center justify-center gap-1 bg-emerald-600 px-3 py-1 rounded text-sm text-white font-bold"><Save size={14}/> Guardar</button>
                 <button onClick={() => setIsEditing(false)} className="flex-1 flex items-center justify-center gap-1 bg-red-600 px-3 py-1 rounded text-sm text-white font-bold"><X size={14}/> Cancelar</button>
             </div>
         </div>
       ) : (
-        <p className="text-sm leading-relaxed italic text-[#f1f0ed]/90 font-['Satoshi',sans-serif] mt-2">
+        <p className="tech-border text-sm leading-relaxed italic text-[--color-text-secondary] mt-2">
             "{narrative}"
         </p>
       )}

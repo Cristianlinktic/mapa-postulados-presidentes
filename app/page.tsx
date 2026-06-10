@@ -6,57 +6,46 @@ import { NarrativeRadar } from "@/components/dashboard/NarrativeRadar";
 import { ReputationRisk } from "@/components/dashboard/ReputationRisk";
 import { TrendPulse } from "@/components/dashboard/TrendPulse";
 import { ThemeFilter } from "@/components/dashboard/ThemeFilter";
+import { ThemeToggle } from "@/components/dashboard/ThemeToggle";
 import { AIInsights } from "@/components/dashboard/AIInsights";
 
 export default function Home() {
   return (
-    <div className="flex flex-col h-screen p-4 gap-3 overflow-hidden bg-[#02040a] text-[#f1f0ed]">
+    <div className="flex flex-col h-screen p-4 gap-3 overflow-hidden bg-[--color-void] text-[--color-text-primary]">
 
       {/* ── HEADER ──────────────────────────────────────────── */}
-      <header className="intel-panel rounded-2xl px-6 py-3 flex justify-between items-center shrink-0">
-        {/* Left: Branding */}
-        <div className="flex items-center gap-5">
-          {/* Colombia flag accent */}
-          <div className="flex flex-col gap-0.5 shrink-0">
-            <div className="w-6 h-1 rounded-full bg-gold" />
-            <div className="w-6 h-1 rounded-full bg-espriella" />
-            <div className="w-6 h-1 rounded-full bg-alert" />
-          </div>
-
-          <div>
-            <div className="section-label mb-0.5">Centro de Inteligencia Electoral</div>
-            <h1 className="display-title text-xl text-white leading-none">
+      <header className="intel-panel rounded-2xl p-6 flex flex-col md:flex-row justify-between items-start md:items-center gap-6 shrink-0 relative overflow-hidden">
+        {/* Decorative scanline */}
+        <div className="absolute top-0 left-0 w-full h-[1px] bg-gradient-to-r from-transparent via-[--color-accent] to-transparent opacity-50" />
+        
+        {/* Brand & Metrics */}
+        <div className="flex items-center gap-6">
+          <div className="flex flex-col">
+            <h1 className="display-title text-4xl">
               COLOMBIA{" "}
-              <span className="text-gold">2026</span>
+              <span className="text-[--color-accent]">2026</span>
             </h1>
-          </div>
-...
-
-          {/* Classified stamp */}
-          <div className="hidden lg:flex items-center gap-2 ml-4 px-3 py-1 border rounded border-gold/25 bg-gold/4">
-            <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
-              <circle cx="5" cy="5" r="4" stroke="rgba(201,168,76,0.6)" strokeWidth="1"/>
-              <path d="M5 2v3l2 1.5" stroke="rgba(201,168,76,0.6)" strokeWidth="0.8" strokeLinecap="round"/>
-            </svg>
-            <span className="mono-data text-[9px] uppercase tracking-widest text-gold/60">
-              Actualización continua
-            </span>
+            <div className="section-label mt-1 text-[--color-text-secondary]">
+              Centro de Inteligencia Electoral — Nodo Central
+            </div>
           </div>
         </div>
 
         {/* Right: Controls */}
-        <div className="flex items-center gap-4">
-          <ThemeFilter />
-
-          {/* Live indicator */}
-          <div className="flex items-center gap-2 px-3 py-1.5 rounded-full border border-cepeda/20 bg-cepeda/5">
+        <div className="flex items-center gap-4 w-full md:w-auto justify-between md:justify-end">
+          <div className="flex items-center gap-2 px-3 py-1.5 rounded-full border border-emerald-500/20 bg-emerald-500/10">
             <span className="relative flex h-1.5 w-1.5">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 bg-cepeda" />
-              <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-cepeda" />
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 bg-emerald-500" />
+              <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-500" />
             </span>
-            <span className="mono-data text-[9px] uppercase tracking-widest text-cepeda/80">
+            <span className="mono-data text-[9px] uppercase tracking-widest text-emerald-600">
               Sistema en vivo
             </span>
+          </div>
+          
+          <div className="flex items-center gap-2">
+            <ThemeToggle />
+            <ThemeFilter />
           </div>
         </div>
       </header>

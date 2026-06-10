@@ -20,27 +20,21 @@ export default function MapContainer() {
   const setSelectedLocationId = useStore((state) => state.setSelectedLocationId);
 
   useEffect(() => {
-    if (map.current) return; // initialize map only once
+    if (map.current) return;
     if (!mapContainer.current) return;
+
+    const isDark = document.documentElement.classList.contains('dark');
+    
     map.current = new mapboxgl.Map({
       container: mapContainer.current,
-      style: "mapbox://styles/mapbox/dark-v11",
+      style: isDark ? "mapbox://styles/mapbox/dark-v11" : "mapbox://styles/mapbox/light-v11",
       center: [-74.0721, 4.7110], // Bogotá
       zoom: 5,
     });
 
-    map.current.on('load', () => {
+    const addMapLayers = () => {
       if (!map.current) return;
-      
-      // Force the background of the entire map canvas
-      const layers = map.current.getStyle().layers;
-      if (layers) {
-        layers.forEach((layer) => {
-          if (layer.id === 'water' || layer.id === 'background') {
-            map.current?.setPaintProperty(layer.id, layer.type === 'background' ? 'background-color' : 'fill-color', '#0a0c14');
-          }
-        });
-      }
+      if (map.current.getSource('colombia')) return; // Already added
 
       map.current.addSource('colombia', {
         type: 'geojson',
@@ -48,19 +42,14 @@ export default function MapContainer() {
         generateId: true
       });
 
-      // Join data
-      const source = map.current.getSource('colombia') as mapboxgl.GeoJSONSource;
-      
-      // Basic choropleth color expression
-      // Cepeda: #D8B4FE (Light Purple), Espriella: #FB923C (Orange)
       const colorExpression: any = [
         'match',
         ['get', 'shapeID'],
         ...Object.entries(mockTerritorialData).flatMap(([id, data]) => [
           id,
-          data.favorabilidadCepeda > data.favorabilidadDeLaEspriella ? '#D8B4FE' : '#FB923C'
+          data.favorabilidadCepeda > data.favorabilidadDeLaEspriella ? '#c084fc' : '#f97316'
         ]),
-        '#6b7280' // Default
+        '#e2e8f0'
       ];
 
       map.current.addLayer({
@@ -71,16 +60,15 @@ export default function MapContainer() {
           'fill-color': [
             'case',
             ['boolean', ['feature-state', 'selected'], false],
-            '#C9A84C', // Active State (Premium Gold)
+            '#3b82f6',
             ['boolean', ['feature-state', 'hover'], false],
-            'rgba(201, 168, 76, 0.4)', // Hover color
+            'rgba(59, 130, 246, 0.4)',
             colorExpression
           ],
-          'fill-opacity': 0.7
+          'fill-opacity': 0.8
         }
       });
       
-      // Add a border layer for clarity
       map.current.addLayer({
         id: 'colombia-borders',
         type: 'line',
@@ -90,7 +78,10 @@ export default function MapContainer() {
           'line-width': ['case', ['boolean', ['feature-state', 'selected'], false], 2, 0.5]
         }
       });
-    });
+    };
+
+    map.current.on('style.load', addMapLayers);
+    map.current.on('load', addMapLayers);
 
     let hoveredStateId: string | number | null = null;
     let selectedStateId: string | number | null = null;
@@ -115,7 +106,7 @@ export default function MapContainer() {
         hoveredStateId = null;
     });
 
-    map.current.on('click', 'colombia-layer', async (e) => { // Changed to async
+    map.current.on('click', 'colombia-layer', async (e) => {
         if (e.features && e.features.length > 0) {
             const feature = e.features[0];
             const shapeID = feature.properties?.shapeID;
@@ -132,7 +123,6 @@ export default function MapContainer() {
             if (shapeID) {
                 setSelectedLocationId(shapeID);
                 
-                // Fetch directly from Supabase
                 const { data: fetchedData } = await supabase
                     .from('territories')
                     .select('*')
@@ -141,35 +131,30 @@ export default function MapContainer() {
                 const data = (fetchedData && fetchedData.length > 0) ? fetchedData[0] : null;
 
                 const popupContent = data ? `
-                    <!-- Label -->
-                    <div style="font-size: 8px; font-weight: 600; letter-spacing: 0.2em; text-transform: uppercase; color: var(--color-gold); margin-bottom: 6px;">Análisis territorial</div>
-                    <!-- Region name -->
-                    <div style="font-size: 16px; font-weight: 700; color: #ffffff; margin-bottom: 12px; line-height: 1.2;">${data.name}</div>
-                    <!-- Divider -->
-                    <div style="height:1px; background: rgba(201,168,76,0.2); margin-bottom: 12px;"></div>
-                    <!-- Cepeda row -->
+                    <div style="font-size: 8px; font-weight: 600; letter-spacing: 0.2em; text-transform: uppercase; color: var(--color-accent); margin-bottom: 6px;">Análisis territorial</div>
+                    <div style="font-size: 16px; font-weight: 700; color: var(--color-text-primary); margin-bottom: 12px; line-height: 1.2;">${data.name}</div>
+                    <div style="height:1px; background: var(--color-panel-border); margin-bottom: 12px;"></div>
                     <div style="margin-bottom: 10px;">
                         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 4px;">
                             <span style="font-size: 8px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--color-cepeda);">Cepeda</span>
-                            <span style="font-size: 11px; font-weight: 600; color: var(--color-cepeda);">${data.favorabilidad_cepeda}%</span>
+                            <span style="font-size: 11px; font-weight: 600; color: var(--color-text-primary);">${data.favorabilidad_cepeda}%</span>
                         </div>
-                        <div style="height: 4px; border-radius: 2px; background: rgba(255,255,255,0.05);">
+                        <div style="height: 4px; border-radius: 2px; background: var(--color-panel-border);">
                             <div style="height: 100%; width: ${data.favorabilidad_cepeda}%; border-radius: 2px; background: var(--color-cepeda);"></div>
                         </div>
                     </div>
-                    <!-- Espriella row -->
                     <div>
                         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 4px;">
                             <span style="font-size: 8px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--color-espriella);">Espriella</span>
-                            <span style="font-size: 11px; font-weight: 600; color: var(--color-espriella);">${data.favorabilidad_espriella}%</span>
+                            <span style="font-size: 11px; font-weight: 600; color: var(--color-text-primary);">${data.favorabilidad_espriella}%</span>
                         </div>
-                        <div style="height: 4px; border-radius: 2px; background: rgba(255,255,255,0.05);">
+                        <div style="height: 4px; border-radius: 2px; background: var(--color-panel-border);">
                             <div style="height: 100%; width: ${data.favorabilidad_espriella}%; border-radius: 2px; background: var(--color-espriella);"></div>
                         </div>
                     </div>
                 ` : `
-                    <div style="font-size: 14px; font-weight: 600; color: #ffffff; margin-bottom: 8px;">Región sin datos</div>
-                    <div style="font-size: 12px; color: rgba(255,255,255,0.7);">Completa la información en el panel derecho para visualizar el análisis.</div>
+                    <div style="font-size: 14px; font-weight: 600; color: var(--color-text-primary); margin-bottom: 8px;">Región sin datos</div>
+                    <div style="font-size: 12px; color: var(--color-text-secondary);">Completa la información en el panel derecho para visualizar el análisis.</div>
                 `;
 
                 new mapboxgl.Popup({ closeButton: false, className: 'intel-popup', maxWidth: '220px' })
@@ -177,12 +162,11 @@ export default function MapContainer() {
                     .setHTML(`
                       <div style="
                         background: var(--color-surface);
-                        border: 1px solid var(--color-gold-glow);
+                        border: 1px solid var(--color-panel-border);
                         border-radius: 12px;
                         padding: 16px;
-                        backdrop-filter: blur(20px);
                         font-family: 'Satoshi', sans-serif;
-                        box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+                        box-shadow: var(--color-panel-shadow);
                         min-width: 200px;
                       ">
                         ${popupContent}
@@ -192,13 +176,22 @@ export default function MapContainer() {
             }
         }
     });
-  }, [setSelectedLocationId]);
+
+    const observer = new MutationObserver(() => {
+        const isDark = document.documentElement.classList.contains('dark');
+        map.current?.setStyle(isDark ? "mapbox://styles/mapbox/dark-v11" : "mapbox://styles/mapbox/light-v11");
+    });
+    observer.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
+
+    return () => {
+        observer.disconnect();
+        map.current?.remove();
+    };
+  }, []);
 
   return (
-    <div className="relative h-full w-full rounded-2xl overflow-hidden border border-white/[0.05] bg-black">
+    <div className="relative h-full w-full rounded-2xl overflow-hidden border border-[--color-panel-border] bg-[--color-surface]">
       <div ref={mapContainer} className="h-full w-full" />
-      {/* Subtle overlay to integrate base map with dark theme */}
-      <div className="absolute inset-0 pointer-events-none bg-gradient-to-tr from-black/40 to-transparent" />
     </div>
   );
 }

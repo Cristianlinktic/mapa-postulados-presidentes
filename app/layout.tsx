@@ -21,15 +21,16 @@ export default function RootLayout({
   return (
     <html
       lang="es"
+      suppressHydrationWarning
       className={cn(
-        "h-full dark", 
+        "h-full", 
         inter.variable, 
         outfit.variable, 
         playfair.variable, 
         jetbrains.variable
       )}
     >
-      <body className="min-h-full flex flex-col bg-[#02040a] text-[#f1f0ed] font-sans antialiased overflow-hidden">
+      <body className="min-h-full flex flex-col bg-[--color-void] text-[--color-text-primary] font-sans antialiased overflow-hidden">
         {/* Grain overlay for cinematic texture */}
         <div className="grain-overlay" aria-hidden="true" />
         {children}

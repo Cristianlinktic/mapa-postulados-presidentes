@@ -17,11 +17,7 @@ export function ThemeFilter() {
 
   return (
     <div
-      className="flex gap-1 p-1 rounded-lg"
-      style={{
-        background: 'rgba(4,6,13,0.6)',
-        border: '1px solid rgba(201,168,76,0.1)',
-      }}
+      className="flex gap-1 p-1 rounded-lg bg-[--color-surface-elevated] border border-[--color-panel-border]"
     >
       {themes.map((theme) => {
         const isActive = currentTheme === theme;
@@ -30,8 +26,8 @@ export function ThemeFilter() {
             key={theme}
             id={`theme-filter-${theme.toLowerCase()}`}
             onClick={() => setCurrentTheme(theme)}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md transition-all duration-200 border
-              ${isActive ? 'bg-gold/[0.12] border-gold/[0.25] text-gold font-semibold' : 'bg-transparent border-transparent text-[#f1f0ed]/40 font-normal'}
+            className={`group flex items-center gap-2 px-3 py-1.5 rounded-md transition-all duration-300 border
+              ${isActive ? 'bg-[--color-surface] border-[--color-panel-border] text-[--color-accent] font-bold shadow-sm' : 'bg-transparent border-transparent text-[--color-text-secondary] font-normal hover:text-[--color-text-primary]'}
             `}
             style={{
               fontFamily: 'Satoshi, sans-serif',
@@ -42,7 +38,8 @@ export function ThemeFilter() {
               outline: 'none',
             }}
           >
-            <span style={{ opacity: isActive ? 1 : 0.5, fontSize: '9px' }}>
+            {isActive && <div className="w-2 h-2 rounded-full bg-[--color-accent] animate-pulse" />}
+            <span className={`transition-all duration-300 ${isActive ? 'text-[--color-accent] scale-110' : 'text-current opacity-50'} `} style={{ fontSize: '10px' }}>
               {themeIcons[theme]}
             </span>
             {theme}
