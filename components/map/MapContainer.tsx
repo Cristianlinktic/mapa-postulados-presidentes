@@ -91,11 +91,9 @@ export default function MapContainer() {
     if (map.current) return;
     if (!mapContainer.current) return;
 
-    const isDark = document.documentElement.classList.contains('dark');
-    
     map.current = new mapboxgl.Map({
       container: mapContainer.current,
-      style: isDark ? "mapbox://styles/mapbox/dark-v11" : "mapbox://styles/mapbox/light-v11",
+      style: "mapbox://styles/mapbox/light-v11",
       center: [-74.0721, 4.7110],
       zoom: 5,
     });
@@ -121,13 +119,13 @@ export default function MapContainer() {
           'fill-opacity': 0.8
         }
       });
-      
+
       map.current.addLayer({
         id: 'colombia-borders',
         type: 'line',
         source: 'colombia',
         paint: {
-          'line-color': '#fff',
+          'line-color': '#94a3b8',
           'line-width': ['case', ['boolean', ['feature-state', 'selected'], false], 2, 0.5]
         }
       });
@@ -197,14 +195,7 @@ export default function MapContainer() {
         }
     });
 
-    const observer = new MutationObserver(() => {
-        const isDark = document.documentElement.classList.contains('dark');
-        map.current?.setStyle(isDark ? "mapbox://styles/mapbox/dark-v11" : "mapbox://styles/mapbox/light-v11");
-    });
-    observer.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
-
     return () => {
-        observer.disconnect();
         map.current?.remove();
         setMapInstance(null);
         setActivePopup(null);
