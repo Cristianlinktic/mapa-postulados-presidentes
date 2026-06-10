@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { supabase } from "@/lib/supabaseClient";
 import { TrendingUp, TrendingDown, Edit2, Save, X } from "lucide-react";
+import { useStore } from "@/lib/store";
 
 interface Trend {
   id: string;
@@ -16,6 +17,10 @@ export function TrendPulse() {
   const [trends, setTrends] = useState<Trend[]>([]);
   const [isEditing, setIsEditing] = useState(false);
   const [editTrends, setEditTrends] = useState<Trend[]>([]);
+  const user = useStore((state) => state.user);
+
+  const isAdmin = user?.role === 'admin';
+  const showEditMode = isEditing && isAdmin;
 
   useEffect(() => {
     async function fetchTrends() {
@@ -29,6 +34,7 @@ export function TrendPulse() {
   }, []);
 
   const handleSave = async () => {
+    if (!isAdmin) return;
     // Basic upsert logic
     for (const trend of editTrends) {
       await supabase.from('trends').upsert(trend);
@@ -39,14 +45,17 @@ export function TrendPulse() {
 
   return (
     <div className="intel-panel rounded-xl px-5 py-3 w-full overflow-hidden shrink-0 shadow-sm relative font-['Satoshi',sans-serif]">
-      <button
-        onClick={() => setIsEditing(!isEditing)} 
-        className="cursor-pointer absolute top-2 right-2 text-[--color-text-muted] hover:text-[--color-text-primary] z-10"
-      >
-        <Edit2 size={12}/>
-      </button>
+      {isAdmin && (
+        <button
+          onClick={() => setIsEditing(!isEditing)} 
+          className="cursor-pointer absolute top-2 right-2 text-[--color-text-muted] hover:text-[--color-text-primary] z-10"
+        >
+          <Edit2 size={12}/>
+        </button>
+      )}
 
-      {isEditing ? (
+      {showEditMode ? (
+
         <div className="space-y-2 p-2 bg-[--color-surface-elevated] border border-[--color-panel-border] rounded mt-4">
             {editTrends.map((t, i) => (
                 <div key={i} className="flex gap-2 text-xs items-center">

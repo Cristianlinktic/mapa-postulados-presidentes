@@ -21,10 +21,12 @@ export function TerritorialSummary() {
   const selectedLocationId = useStore((state) => state.selectedLocationId);
   const currentData = useStore((state) => state.currentData);
   const setCurrentData = useStore((state) => state.setCurrentData);
-  
+  const user = useStore((state) => state.user);
+  const isAdmin = user?.role === 'admin';
   const [isEditing, setIsEditing] = useState(false);
   const [formData, setFormData] = useState<TerritorialData | null>(null);
   const [loading, setLoading] = useState(false);
+  const showEditMode = isEditing && isAdmin;
 
   const fetchData = async (isRefresh = false) => {
     if (!selectedLocationId) return;
@@ -63,7 +65,7 @@ export function TerritorialSummary() {
   }, [selectedLocationId]);
 
   const handleSave = async () => {
-    if (!formData) return;
+    if (!isAdmin || !formData) return;
     setLoading(true);
     const { data: savedData, error } = await supabase
         .from('territories')
@@ -92,99 +94,109 @@ export function TerritorialSummary() {
   }
 
   // Unified Form for Edit and Create
-  if (isEditing || (!currentData && selectedLocationId && formData)) {
+  if (showEditMode || (isAdmin && !currentData && selectedLocationId && formData)) {
     if (!formData) return null;
     const isCreating = !currentData;
     return (
         <div className="p-5 space-y-4">
-            <div className="flex items-center gap-2 mb-2">
-                <div className={`w-2 h-2 rounded-full ${isCreating ? 'bg-amber-500 animate-pulse' : 'bg-[--color-accent]'}`} />
-                <h3 className="font-bold text-[--color-text-primary] text-sm uppercase tracking-wider">
-                    {isCreating ? 'Configurar región' : `Editar ${currentData?.name}`}
-                </h3>
-            </div>
-            
-            <div className="space-y-1">
-                <label className="text-[10px] uppercase tracking-widest text-[--color-text-secondary] font-bold">Departamento</label>
-                <div className="text-sm bg-[--color-void] p-3 rounded-lg text-[--color-text-primary] border border-[--color-panel-border] font-bold">{formData.name}</div>
-            </div>
+             <div className="flex items-center gap-2 mb-2">
+                 <div className={`w-2 h-2 rounded-full ${isCreating ? 'bg-amber-500 animate-pulse' : 'bg-[--color-accent]'}`} />
+                 <h3 className="font-bold text-[--color-text-primary] text-sm uppercase tracking-wider">
+                     {isCreating ? 'Configurar región' : `Editar ${currentData?.name}`}
+                 </h3>
+             </div>
+             
+             <div className="space-y-1">
+                 <label className="text-[10px] uppercase tracking-widest text-[--color-text-secondary] font-bold">Departamento</label>
+                 <div className="text-sm bg-[--color-void] p-3 rounded-lg text-[--color-text-primary] border border-[--color-panel-border] font-bold">{formData.name}</div>
+             </div>
 
-            <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-1">
-                    <label className="text-[10px] uppercase tracking-widest text-[--color-text-secondary]">Población</label>
-                    <input type="number" value={formData.poblacion} onChange={e => setFormData({...formData, poblacion: parseInt(e.target.value) || 0})} className="w-full bg-[--color-surface] border border-[--color-panel-border] p-2 rounded text-sm text-[--color-text-primary] focus:border-[--color-accent] outline-none transition-colors" />
-                </div>
-                <div className="space-y-1">
-                    <label className="text-[10px] uppercase tracking-widest text-[--color-text-secondary]">Censo Electoral</label>
-                    <input type="number" value={formData.censo_electoral} onChange={e => setFormData({...formData, censo_electoral: parseInt(e.target.value) || 0})} className="w-full bg-[--color-surface] border border-[--color-panel-border] p-2 rounded text-sm text-[--color-text-primary] focus:border-[--color-accent] outline-none transition-colors" />
-                </div>
-            </div>
+             <div className="grid grid-cols-2 gap-3">
+                 <div className="space-y-1">
+                     <label className="text-[10px] uppercase tracking-widest text-[--color-text-secondary]">Población</label>
+                     <input type="number" value={formData.poblacion} onChange={e => setFormData({...formData, poblacion: parseInt(e.target.value) || 0})} className="w-full bg-[--color-surface] border border-[--color-panel-border] p-2 rounded text-sm text-[--color-text-primary] focus:border-[--color-accent] outline-none transition-colors" />
+                 </div>
+                 <div className="space-y-1">
+                     <label className="text-[10px] uppercase tracking-widest text-[--color-text-secondary]">Censo Electoral</label>
+                     <input type="number" value={formData.censo_electoral} onChange={e => setFormData({...formData, censo_electoral: parseInt(e.target.value) || 0})} className="w-full bg-[--color-surface] border border-[--color-panel-border] p-2 rounded text-sm text-[--color-text-primary] focus:border-[--color-accent] outline-none transition-colors" />
+                 </div>
+             </div>
 
-            <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-1">
-                    <label className="text-[10px] uppercase tracking-widest text-[--color-text-secondary]">Fav. Cepeda (%)</label>
-                    <input type="number" value={formData.favorabilidad_cepeda} onChange={e => setFormData({...formData, favorabilidad_cepeda: parseInt(e.target.value) || 0})} className="w-full bg-[--color-surface] border border-[--color-panel-border] p-2 rounded text-sm text-[--color-text-primary] focus:border-[--color-accent] outline-none transition-colors" />
-                </div>
-                <div className="space-y-1">
-                    <label className="text-[10px] uppercase tracking-widest text-[--color-text-secondary]">Fav. Espriella (%)</label>
-                    <input type="number" value={formData.favorabilidad_espriella} onChange={e => setFormData({...formData, favorabilidad_espriella: parseInt(e.target.value) || 0})} className="w-full bg-[--color-surface] border border-[--color-panel-border] p-2 rounded text-sm text-[--color-text-primary] focus:border-[--color-accent] outline-none transition-colors" />
-                </div>
-            </div>
+             <div className="grid grid-cols-2 gap-3">
+                 <div className="space-y-1">
+                     <label className="text-[10px] uppercase tracking-widest text-[--color-text-secondary]">Fav. Cepeda (%)</label>
+                     <input type="number" value={formData.favorabilidad_cepeda} onChange={e => setFormData({...formData, favorabilidad_cepeda: parseInt(e.target.value) || 0})} className="w-full bg-[--color-surface] border border-[--color-panel-border] p-2 rounded text-sm text-[--color-text-primary] focus:border-[--color-accent] outline-none transition-colors" />
+                 </div>
+                 <div className="space-y-1">
+                     <label className="text-[10px] uppercase tracking-widest text-[--color-text-secondary]">Fav. Espriella (%)</label>
+                     <input type="number" value={formData.favorabilidad_espriella} onChange={e => setFormData({...formData, favorabilidad_espriella: parseInt(e.target.value) || 0})} className="w-full bg-[--color-surface] border border-[--color-panel-border] p-2 rounded text-sm text-[--color-text-primary] focus:border-[--color-accent] outline-none transition-colors" />
+                 </div>
+             </div>
 
-            <div className="flex gap-2 pt-2">
-                <button onClick={handleSave} className="flex-1 cursor-pointer bg-emerald-500 hover:bg-emerald-600 py-3 rounded-lg font-bold text-white transition-all shadow-lg shadow-emerald-500/20 active:scale-[0.98] flex items-center justify-center gap-2">
-                    <Save size={16}/> {isCreating ? 'Crear registro' : 'Guardar cambios'}
-                </button>
-                {isEditing && (
-                    <button onClick={() => setIsEditing(false)} className="px-4 cursor-pointer bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 rounded-lg font-bold text-red-500 transition-all flex items-center justify-center">
-                        <X size={16}/>
-                    </button>
-                )}
-            </div>
-        </div>
-    )
-  }
+             <div className="flex gap-2 pt-2">
+                 <button onClick={handleSave} className="flex-1 cursor-pointer bg-emerald-500 hover:bg-emerald-600 py-3 rounded-lg font-bold text-white transition-all shadow-lg shadow-emerald-500/20 active:scale-[0.98] flex items-center justify-center gap-2">
+                     <Save size={16}/> {isCreating ? 'Crear registro' : 'Guardar cambios'}
+                 </button>
+                 {isEditing && (
+                     <button onClick={() => setIsEditing(false)} className="px-4 cursor-pointer bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 rounded-lg font-bold text-red-500 transition-all flex items-center justify-center">
+                         <X size={16}/>
+                     </button>
+                 )}
+             </div>
+         </div>
+     )
+   }
 
-  if (!currentData) {
-    return (
-      <div className="p-6 flex flex-col items-center justify-center gap-3 text-center py-8">
-        <div className="w-10 h-10 rounded-full flex items-center justify-center"
-          style={{ background: 'var(--color-accent-dim)', border: '1px solid var(--color-panel-border)' }}>
-          <MapPin size={16} className="text-[--color-accent]" />
-        </div>
-        <div>
-          <div className="section-label mb-1 text-[--color-text-secondary]">Región no seleccionada</div>
-          <p className="text-xs text-[--color-text-muted]">
-            Haz clic sobre un departamento en el mapa para ver su análisis territorial.
-          </p>
-        </div>
-      </div>
-    );
-  }
+   if (!currentData) {
+     const hasSelected = !!selectedLocationId;
+     return (
+       <div className="p-6 flex flex-col items-center justify-center gap-3 text-center py-8">
+         <div className="w-10 h-10 rounded-full flex items-center justify-center"
+           style={{ background: 'var(--color-accent-dim)', border: '1px solid var(--color-panel-border)' }}>
+           <MapPin size={16} className="text-[--color-accent]" />
+         </div>
+         <div>
+           <div className="section-label mb-1 text-[--color-text-secondary]">
+             {hasSelected ? 'Sin datos registrados' : 'Región no seleccionada'}
+           </div>
+           <p className="text-xs text-[--color-text-muted]">
+             {hasSelected 
+               ? 'No hay información disponible para este departamento en el sistema.' 
+               : 'Haz clic sobre un departamento en el mapa para ver su análisis territorial.'}
+           </p>
+         </div>
+       </div>
+     );
+   }
 
-  const cepedaLeads = currentData.favorabilidad_cepeda > currentData.favorabilidad_espriella;
-  const gap = Math.abs(currentData.favorabilidad_cepeda - currentData.favorabilidad_espriella);
+   const cepedaLeads = currentData.favorabilidad_cepeda > currentData.favorabilidad_espriella;
+   const gap = Math.abs(currentData.favorabilidad_cepeda - currentData.favorabilidad_espriella);
 
-  return (
-    <div className="p-5">
-      <div className="flex items-start justify-between mb-4 p-3 rounded-lg bg-[--color-surface-elevated] border border-[--color-panel-border]">
-        <div>
-          <div className="section-label mb-1 text-[--color-text-secondary]">Análisis territorial</div>
-          <div className="flex items-center gap-2">
-            <h2 className="display-title text-lg text-[--color-text-primary] leading-tight">{currentData.name}</h2>
-            <button className="cursor-pointer" onClick={() => setIsEditing(true)}><Edit2 size={14} className="text-[--color-text-muted] hover:text-[--color-text-primary]"/></button>
-          </div>
-        </div>
-        <div
-          className={`shrink-0 px-2 py-1 rounded text-[9px] mono-data uppercase tracking-widest border
-            ${cepedaLeads ? 'bg-[--color-cepeda]/10 border-[--color-cepeda]/20 text-[--color-cepeda]' : 'bg-[--color-espriella]/10 border-[--color-espriella]/20 text-[--color-espriella]'}
-          `}
-        >
-          {cepedaLeads ? 'Cepeda +' : 'Espriella +'}{gap}pts
-        </div>
-      </div>
+   return (
+     <div className="p-5">
+       <div className="flex items-start justify-between mb-4 p-3 rounded-lg bg-[--color-surface-elevated] border border-[--color-panel-border]">
+         <div>
+           <div className="section-label mb-1 text-[--color-text-secondary]">Análisis territorial</div>
+           <div className="flex items-center gap-2">
+             <h2 className="display-title text-lg text-[--color-text-primary] leading-tight">{currentData.name}</h2>
+             {isAdmin && (
+               <button className="cursor-pointer" onClick={() => setIsEditing(true)}>
+                 <Edit2 size={14} className="text-[--color-text-muted] hover:text-[--color-text-primary]"/>
+               </button>
+             )}
+           </div>
+         </div>
+         <div
+           className={`shrink-0 px-2 py-1 rounded text-[9px] mono-data uppercase tracking-widest border
+             ${cepedaLeads ? 'bg-[--color-cepeda]/10 border-[--color-cepeda]/20 text-[--color-cepeda]' : 'bg-[--color-espriella]/10 border-[--color-espriella]/20 text-[--color-espriella]'}
+           `}
+         >
+           {cepedaLeads ? 'Cepeda +' : 'Espriella +'}{gap}pts
+         </div>
+       </div>
 
-      <div className="h-px bg-[--color-panel-border] my-4" />
+       <div className="h-px bg-[--color-panel-border] my-4" />
+
 
       <div className="grid grid-cols-2 gap-x-5 gap-y-4 mb-4">
         <StatBlock

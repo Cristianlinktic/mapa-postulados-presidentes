@@ -16,9 +16,13 @@ interface NarrativeItem {
 
 export function NarrativeRadar() {
   const selectedLocationId = useStore((state) => state.selectedLocationId);
+  const user = useStore((state) => state.user);
   const [items, setItems] = useState<NarrativeItem[]>([]);
   const [isEditing, setIsEditing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const isAdmin = user?.role === 'admin';
+  const showEditMode = isEditing && isAdmin;
 
   useEffect(() => {
     if (!selectedLocationId) return;
@@ -31,6 +35,7 @@ export function NarrativeRadar() {
   }
 
   const addItem = async (candidate: string, category: NarrativeItem['category']) => {
+    if (!isAdmin) return;
     const newItem = { 
         id: crypto.randomUUID(),
         shape_id: selectedLocationId!, 
@@ -53,12 +58,14 @@ export function NarrativeRadar() {
   };
 
   const updateItem = async (id: string, text: string) => {
+    if (!isAdmin) return;
     const newItems = items.map(item => item.id === id ? { ...item, text } : item);
     setItems(newItems);
     await supabase.from('narrative_radar_items').update({ text }).eq('id', id);
   };
 
   const deleteItem = async (id: string) => {
+    if (!isAdmin) return;
     await supabase.from('narrative_radar_items').delete().eq('id', id);
     fetchNarrativeItems();
   };
@@ -69,11 +76,11 @@ export function NarrativeRadar() {
     const filtered = items.filter(i => i.candidate_name === candidate && i.category === category);
     return (
       <div className="space-y-1.5">
-        <div className="section-title" style={{ color: `var(${colorVar})` }}>{isEditing ? '' : '◈'} {title}</div>
+        <div className="section-title" style={{ color: `var(${colorVar})` }}>{showEditMode ? '' : '◈'} {title}</div>
         <ul className="space-y-1">
           {filtered.map(item => (
             <li key={item.id} className="flex items-start gap-2 text-xs text-[--color-text-secondary]">
-              {isEditing ? (
+              {showEditMode ? (
                 <div className="flex items-center gap-2 w-full">
                   <input value={item.text} onChange={(e) => updateItem(item.id, e.target.value)} className="bg-[--color-surface] p-1 rounded flex-1 text-[--color-text-primary] text-xs border border-[--color-panel-border]"/>
                   <button onClick={() => deleteItem(item.id)} className="text-[--color-alert] p-1 shrink-0 cursor-pointer"><Trash2 size={14}/></button>
@@ -83,7 +90,7 @@ export function NarrativeRadar() {
               )}
             </li>
           ))}
-          {isEditing && <button onClick={() => addItem(candidate, category)} className="text-xs text-[--color-accent] flex items-center gap-1 cursor-pointer"><Plus size={12}/> Agregar</button>}
+          {showEditMode && <button onClick={() => addItem(candidate, category)} className="text-xs text-[--color-accent] flex items-center gap-1 cursor-pointer"><Plus size={12}/> Agregar</button>}
         </ul>
       </div>
     );
@@ -107,7 +114,9 @@ export function NarrativeRadar() {
 
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2"><Radio className="text-[--color-accent] opacity-70" size={12}/><div className="section-label">Radar de narrativas</div></div>
-        <button className="cursor-pointer" onClick={() => setIsEditing(!isEditing)}><Edit2 size={14} className="text-[--color-text-muted] hover:text-[--color-text-primary]"/></button>
+        {isAdmin && (
+          <button className="cursor-pointer" onClick={() => setIsEditing(!isEditing)}><Edit2 size={14} className="text-[--color-text-muted] hover:text-[--color-text-primary]"/></button>
+        )}
       </div>
       
       <div className="grid grid-cols-2 gap-4">
@@ -120,7 +129,7 @@ export function NarrativeRadar() {
             </div>
             ))}
       </div>
-      {isEditing && <button onClick={() => setIsEditing(false)} className="mt-4 w-full bg-emerald-500 hover:bg-emerald-600 p-2 rounded text-xs font-bold text-white transition-colors cursor-pointer">Guardar</button>}
+      {showEditMode && <button onClick={() => setIsEditing(false)} className="mt-4 w-full bg-emerald-500 hover:bg-emerald-600 p-2 rounded text-xs font-bold text-white transition-colors cursor-pointer">Guardar</button>}
     </div>
   );
 }

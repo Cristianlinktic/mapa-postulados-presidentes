@@ -16,12 +16,13 @@ if (!MAPBOX_TOKEN) {
 export default function MapContainer() {
   const mapContainer = useRef<HTMLDivElement | null>(null);
   const map = useRef<mapboxgl.Map | null>(null);
+  const layersAdded = useRef(false);
   const setSelectedLocationId = useStore((state) => state.setSelectedLocationId);
   const setMapInstance = useStore((state) => state.setMapInstance);
   const setActivePopup = useStore((state) => state.setActivePopup);
   const activePopup = useStore((state) => state.activePopup);
   const currentData = useStore((state) => state.currentData);
-  
+
   const [territorialData, setTerritorialData] = useState<any[]>([]);
 
   const fetchTerritorialData = async () => {
@@ -32,10 +33,20 @@ export default function MapContainer() {
   };
 
   const updateMapColors = (data: any[]) => {
-    if (!map.current || !map.current.getLayer('colombia-layer')) return;
+    if (!map.current || !layersAdded.current) {
+      console.log("MapContainer: updateMapColors skipped because map or layers are not ready");
+      return;
+    }
+    if (!map.current.getLayer('colombia-layer')) {
+      console.log("MapContainer: updateMapColors skipped because colombia-layer doesn't exist yet");
+      return;
+    }
 
+    console.log("MapContainer: updateMapColors executing with", data.length, "items");
     let colorExpression: any;
-    
+
+
+
     if (data.length > 0) {
       colorExpression = [
         'match',
@@ -69,17 +80,17 @@ export default function MapContainer() {
   useEffect(() => {
     // Escuchar cambios en currentData (del store) para actualizar el popup y datos locales
     if (currentData) {
-        setTerritorialData(prev => {
-            const index = prev.findIndex(t => t.shape_id === currentData.shape_id);
-            if (index === -1) return [...prev, currentData];
-            const next = [...prev];
-            next[index] = currentData;
-            return next;
-        });
+      setTerritorialData(prev => {
+        const index = prev.findIndex(t => t.shape_id === currentData.shape_id);
+        if (index === -1) return [...prev, currentData];
+        const next = [...prev];
+        next[index] = currentData;
+        return next;
+      });
 
-        if (activePopup) {
-            activePopup.setHTML(createPopupHTML(currentData));
-        }
+      if (activePopup) {
+        activePopup.setHTML(createPopupHTML(currentData));
+      }
     }
   }, [currentData, activePopup]);
 
@@ -88,117 +99,220 @@ export default function MapContainer() {
   }, [territorialData]);
 
   useEffect(() => {
-    if (map.current) return;
-    if (!mapContainer.current) return;
+    if (map.current || !mapContainer.current) return;
 
-    map.current = new mapboxgl.Map({
-      container: mapContainer.current,
-      style: "mapbox://styles/mapbox/light-v11",
-      center: [-74.0721, 4.7110],
-      zoom: 5,
-    });
+    console.log("MapContainer: Initializing map instance");
 
-    setMapInstance(map.current);
-
-    const addMapLayers = () => {
-      if (!map.current) return;
-      if (map.current.getSource('colombia')) return;
-
-      map.current.addSource('colombia', {
-        type: 'geojson',
-        data: '/data/colombia.geo.json',
-        generateId: true
+    try {
+      const mapInstance = new mapboxgl.Map({
+        container: mapContainer.current,
+        style: "mapbox://styles/mapbox/light-v11",
+        center: [-74.0721, 4.7110],
+        zoom: 5,
       });
 
-      map.current.addLayer({
-        id: 'colombia-layer',
-        type: 'fill',
-        source: 'colombia',
-        paint: {
-          'fill-color': '#e2e8f0',
-          'fill-opacity': 0.8
+      map.current = mapInstance;
+
+      setMapInstance(mapInstance);
+
+      mapInstance.on("error", (e) => {
+        console.error("Mapbox Error:", e);
+      });
+
+      const addMapLayers = () => {
+        if (!map.current) return;
+
+        if (map.current.getSource("colombia")) {
+          return;
         }
-      });
 
-      map.current.addLayer({
-        id: 'colombia-borders',
-        type: 'line',
-        source: 'colombia',
-        paint: {
-          'line-color': '#94a3b8',
-          'line-width': ['case', ['boolean', ['feature-state', 'selected'], false], 2, 0.5]
-        }
-      });
+        console.log("MapContainer: Adding GeoJSON sources and layers");
 
-      updateMapColors(territorialData);
-    };
+        try {
+          map.current.addSource("colombia", {
+            type: "geojson",
+            data: "/data/colombia.geo.json",
+            generateId: true,
+          });
 
-    map.current.on('style.load', addMapLayers);
-    map.current.on('load', addMapLayers);
+          map.current.addLayer({
+            id: "colombia-layer",
+            type: "fill",
+            source: "colombia",
+            paint: {
+              "fill-color": "#e2e8f0",
+              "fill-opacity": 0.8,
+            },
+          });
 
-    let hoveredStateId: string | number | null = null;
-    let selectedStateId: string | number | null = null;
+          map.current.addLayer({
+            id: "colombia-borders",
+            type: "line",
+            source: "colombia",
+            paint: {
+              "line-color": "#94a3b8",
+              "line-width": [
+                "case",
+                ["boolean", ["feature-state", "selected"], false],
+                2,
+                0.5,
+              ],
+            },
+          });
 
-    map.current.on('mousemove', 'colombia-layer', (e) => {
-        if (e.features && e.features.length > 0) {
+          let hoveredStateId: string | number | null = null;
+          let selectedStateId: string | number | null = null;
+
+          map.current.on("mousemove", "colombia-layer", (e) => {
+            if (!e.features?.length) return;
+
             const feature = e.features[0];
+
             if (feature.id !== undefined) {
-                if (hoveredStateId !== null && hoveredStateId !== feature.id) {
-                    map.current?.setFeatureState({ source: 'colombia', id: hoveredStateId }, { hover: false });
+              if (
+                hoveredStateId !== null &&
+                hoveredStateId !== feature.id
+              ) {
+                map.current?.setFeatureState(
+                  {
+                    source: "colombia",
+                    id: hoveredStateId,
+                  },
+                  {
+                    hover: false,
+                  }
+                );
+              }
+
+              hoveredStateId = feature.id;
+
+              map.current?.setFeatureState(
+                {
+                  source: "colombia",
+                  id: hoveredStateId,
+                },
+                {
+                  hover: true,
                 }
-                hoveredStateId = feature.id;
-                map.current?.setFeatureState({ source: 'colombia', id: hoveredStateId }, { hover: true });
+              );
             }
-        }
-    });
+          });
 
-    map.current.on('mouseleave', 'colombia-layer', () => {
-        if (hoveredStateId !== null) {
-            map.current?.setFeatureState({ source: 'colombia', id: hoveredStateId }, { hover: false });
-        }
-        hoveredStateId = null;
-    });
+          map.current.on("mouseleave", "colombia-layer", () => {
+            if (hoveredStateId !== null) {
+              map.current?.setFeatureState(
+                {
+                  source: "colombia",
+                  id: hoveredStateId,
+                },
+                {
+                  hover: false,
+                }
+              );
+            }
 
-    map.current.on('click', 'colombia-layer', async (e) => {
-        if (e.features && e.features.length > 0) {
+            hoveredStateId = null;
+          });
+
+          map.current.on("click", "colombia-layer", async (e) => {
+            if (!e.features?.length) return;
+
             const feature = e.features[0];
+
             const shapeID = feature.properties?.shapeID;
             const featureId = feature.id;
 
             if (selectedStateId !== null) {
-                map.current?.setFeatureState({ source: 'colombia', id: selectedStateId }, { selected: false });
+              map.current?.setFeatureState(
+                {
+                  source: "colombia",
+                  id: selectedStateId,
+                },
+                {
+                  selected: false,
+                }
+              );
             }
+
             if (featureId !== undefined) {
-                selectedStateId = featureId;
-                map.current?.setFeatureState({ source: 'colombia', id: selectedStateId }, { selected: true });
+              selectedStateId = featureId;
+
+              map.current?.setFeatureState(
+                {
+                  source: "colombia",
+                  id: selectedStateId,
+                },
+                {
+                  selected: true,
+                }
+              );
             }
 
-            if (shapeID) {
-                setSelectedLocationId(shapeID);
-                
-                const { data: fetchedData } = await supabase
-                    .from('territories')
-                    .select('*')
-                    .eq('shape_id', shapeID);
-                
-                const data = (fetchedData && fetchedData.length > 0) ? fetchedData[0] : null;
-                const content = createPopupHTML(data);
+            if (!shapeID) return;
 
-                const popup = new mapboxgl.Popup({ closeButton: false, className: 'intel-popup', maxWidth: '220px' })
-                    .setLngLat(e.lngLat)
-                    .setHTML(content)
-                    .addTo(map.current!);
-                
-                setActivePopup(popup);
-                popup.on('close', () => setActivePopup(null));
-            }
+            setSelectedLocationId(shapeID);
+
+            const { data: fetchedData } = await supabase
+              .from("territories")
+              .select("*")
+              .eq("shape_id", shapeID);
+
+            const territory =
+              fetchedData && fetchedData.length > 0
+                ? fetchedData[0]
+                : null;
+
+            const popup = new mapboxgl.Popup({
+              closeButton: false,
+              className: "intel-popup",
+              maxWidth: "220px",
+            })
+              .setLngLat(e.lngLat)
+              .setHTML(createPopupHTML(territory))
+              .addTo(map.current!);
+
+            setActivePopup(popup);
+
+            popup.on("close", () => {
+              setActivePopup(null);
+            });
+          });
+
+          layersAdded.current = true;
+
+          console.log("MapContainer: Layers added successfully");
+
+          updateMapColors(territorialData);
+        } catch (error) {
+          console.error("Error creating source/layers:", error);
         }
-    });
+      };
+
+      mapInstance.on("load", () => {
+        console.log("MapContainer: load event");
+        addMapLayers();
+      });
+
+      mapInstance.on("idle", () => {
+        console.log("MapContainer: idle event");
+      });
+
+      setTimeout(() => {
+        map.current?.resize();
+      }, 300);
+    } catch (err) {
+      console.error("Failed to construct mapboxgl.Map:", err);
+    }
 
     return () => {
-        map.current?.remove();
-        setMapInstance(null);
-        setActivePopup(null);
+      layersAdded.current = false;
+
+      map.current?.remove();
+
+      map.current = null;
+
+      setMapInstance(null);
+      setActivePopup(null);
     };
   }, []);
 
@@ -210,7 +324,7 @@ export default function MapContainer() {
 }
 
 export function createPopupHTML(data: any) {
-    const popupContent = data ? `
+  const popupContent = data ? `
         <div style="font-size: 8px; font-weight: 600; letter-spacing: 0.2em; text-transform: uppercase; color: var(--color-accent); margin-bottom: 6px;">Análisis territorial</div>
         <div style="font-size: 16px; font-weight: 700; color: var(--color-text-primary); margin-bottom: 12px; line-height: 1.2;">${data.name}</div>
         <div style="height:1px; background: var(--color-panel-border); margin-bottom: 12px;"></div>
@@ -237,7 +351,7 @@ export function createPopupHTML(data: any) {
         <div style="font-size: 12px; color: var(--color-text-secondary);">Completa la información en el panel derecho para visualizar el análisis.</div>
     `;
 
-    return `
+  return `
       <div style="
         background: var(--color-surface);
         border: 1px solid var(--color-panel-border);

@@ -18,11 +18,15 @@ interface CandidateData {
 
 export function PresidentialComparison() {
   const selectedLocationId = useStore((state) => state.selectedLocationId);
+  const user = useStore((state) => state.user);
   const [candidates, setCandidates] = useState<CandidateData[]>([]);
   const [isEditing, setIsEditing] = useState(false);
   const [editCandidates, setEditCandidates] = useState<CandidateData[]>([]);
 
   const [loading, setLoading] = useState(false);
+
+  const isAdmin = user?.role === 'admin';
+  const showEditMode = isEditing && isAdmin;
 
   const fetchCandidates = async (isRefresh = false) => {
     if (!selectedLocationId) {
@@ -55,6 +59,7 @@ export function PresidentialComparison() {
   }, [selectedLocationId]);
 
   const handleSave = async () => {
+    if (!isAdmin) return;
     setLoading(true);
     try {
         // Usamos onConflict para asegurar que si ya existe un candidato con ese nombre 
@@ -90,7 +95,7 @@ export function PresidentialComparison() {
 
   return (
     <div className="intel-panel p-5 rounded-2xl min-h-[200px]">
-      {loading && !isEditing && (
+      {loading && !showEditMode && (
           <div className="absolute inset-0 bg-[--color-surface]/50 backdrop-blur-[1px] z-10 flex items-center justify-center rounded-2xl">
               <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-[--color-accent]"></div>
           </div>
@@ -100,14 +105,17 @@ export function PresidentialComparison() {
           <div className="section-label mb-1 text-[--color-text-secondary]">Comparador Presidencial</div>
           <h2 className="display-title text-base text-[--color-text-primary] leading-none">Candidatos 2026</h2>
         </div>
-        <button onClick={() => setIsEditing(!isEditing)} className="text-[--color-text-muted] hover:text-[--color-text-primary] cursor-pointer">
-          <Edit2 size={16}/>
-        </button>
+        {isAdmin && (
+          <button onClick={() => setIsEditing(!isEditing)} className="text-[--color-text-muted] hover:text-[--color-text-primary] cursor-pointer">
+            <Edit2 size={16}/>
+          </button>
+        )}
       </div>
 
       <div className="h-px bg-[--color-panel-border] my-4" />
 
-      {isEditing ? (
+      {showEditMode ? (
+
         <div className="space-y-4 mt-4">
           {editCandidates.map((c, i) => (
             <div key={c.id} className="bg-[--color-surface-elevated] border border-[--color-panel-border] p-4 rounded-lg space-y-3">

@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabaseClient";
 import { Activity, Edit2, Save, X } from "lucide-react";
+import { useStore } from "@/lib/store";
 
 interface SentimentRow {
   id: string;
@@ -16,6 +17,10 @@ export function SentimentChart() {
   const [data, setData] = useState<SentimentRow[]>([]);
   const [isEditing, setIsEditing] = useState(false);
   const [editData, setEditData] = useState<SentimentRow[]>([]);
+  const user = useStore((state) => state.user);
+
+  const isAdmin = user?.role === 'admin';
+  const showEditMode = isEditing && isAdmin;
 
   useEffect(() => {
     fetchData();
@@ -43,6 +48,7 @@ export function SentimentChart() {
   }
 
   const handleSave = async () => {
+    if (!isAdmin) return;
     try {
         const { data: savedData, error } = await supabase
             .from('sentiment_data')
@@ -68,15 +74,17 @@ export function SentimentChart() {
           <Activity size={12} className="text-[--color-accent] opacity-70" />
           <div className="section-label text-[--color-text-secondary]">Evolución de sentimiento</div>
         </div>
-        <button onClick={() => setIsEditing(!isEditing)} className="text-[--color-text-muted] hover:text-[--color-text-primary] cursor-pointer">
-          <Edit2 size={14} />
-        </button>
+        {isAdmin && (
+          <button onClick={() => setIsEditing(!isEditing)} className="text-[--color-text-muted] hover:text-[--color-text-primary] cursor-pointer">
+            <Edit2 size={14} />
+          </button>
+        )}
       </div>
 
       <h2 className="display-title text-base text-[--color-text-primary] mb-3 leading-none">Curva histórica</h2>
       <div className="h-px bg-[--color-panel-border] my-4" />
 
-      {isEditing ? (
+      {showEditMode ? (
         <div className="space-y-2 mt-4">
           <p className="text-[10px] text-[--color-text-muted] italic">Valores de sentimiento (0-100)</p>
           <div className="grid grid-cols-3 gap-2 items-center text-[10px] text-[--color-text-secondary] uppercase tracking-widest mb-2 px-1">

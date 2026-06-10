@@ -14,6 +14,10 @@ interface AppState {
   setMapInstance: (map: mapboxgl.Map | null) => void;
   activePopup: mapboxgl.Popup | null;
   setActivePopup: (popup: mapboxgl.Popup | null) => void;
+  
+  // Auth state
+  user: { username: string; role: 'admin' | 'reader' } | null;
+  setUser: (user: { username: string; role: 'admin' | 'reader' } | null) => void;
 }
 
 export const useStore = create<AppState>((set) => ({
@@ -27,4 +31,7 @@ export const useStore = create<AppState>((set) => ({
   setMapInstance: (map) => set({ mapInstance: map }),
   activePopup: null,
   setActivePopup: (popup) => set({ activePopup: popup }),
+  user: null,
+  setUser: (user) => set({ user }),
 }));
+

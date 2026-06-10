@@ -10,11 +10,14 @@ import departments from "@/scripts/departments.json";
 export function AIInsights() {
   const theme = useStore((state) => state.currentTheme);
   const locationId = useStore((state) => state.selectedLocationId);
+  const user = useStore((state) => state.user);
   const [narrative, setNarrative] = useState<string>("");
   const [isEditing, setIsEditing] = useState(false);
   const [editValue, setEditValue] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+
+  const isAdmin = user?.role === 'admin';
 
   // Look up region name
   const dept = departments.find(d => d.shapeID === locationId);
@@ -48,6 +51,7 @@ export function AIInsights() {
   }, [locationId, theme]);
 
   const handleSave = async () => {
+    if (!isAdmin) return;
     // Upsert usando la región actual (puede ser null) y el tema
     const { error: saveError } = await supabase
         .from('narratives')
@@ -97,16 +101,18 @@ export function AIInsights() {
             <div className="mono-data text-[10px] text-[--color-text-secondary]">Tema: {theme}</div>
           </div>
         </div>
-        <button onClick={() => setIsEditing(!isEditing)} className="text-[--color-text-muted] hover:text-[--color-text-primary]">
-            <Edit2 size={14} />
-        </button>
+        {isAdmin && (
+          <button onClick={() => setIsEditing(!isEditing)} className="text-[--color-text-muted] hover:text-[--color-text-primary] cursor-pointer">
+              <Edit2 size={14} />
+          </button>
+        )}
       </div>
 
       <div className="h-px bg-[--color-panel-border] my-4" />
 
       {loading ? (
         <p className="text-sm italic text-[--color-text-secondary] mt-2">Cargando...</p>
-      ) : isEditing ? (
+      ) : (isEditing && isAdmin) ? (
         <div className="space-y-3 mt-4">
             <div className="flex justify-between text-xs text-[--color-text-secondary]">
                 <span>{regionName}</span>
@@ -114,8 +120,8 @@ export function AIInsights() {
             </div>
             <textarea value={editValue} onChange={e => setEditValue(e.target.value)} className="w-full bg-[--color-surface] p-2 text-sm text-[--color-text-primary] border border-[--color-panel-border] rounded min-h-[100px]"/>
             <div className="flex gap-2">
-                <button onClick={handleSave} className="flex-1 flex items-center justify-center gap-1 bg-emerald-600 px-3 py-1 rounded text-sm text-white font-bold"><Save size={14}/> Guardar</button>
-                <button onClick={() => setIsEditing(false)} className="flex-1 flex items-center justify-center gap-1 bg-red-600 px-3 py-1 rounded text-sm text-white font-bold"><X size={14}/> Cancelar</button>
+                <button onClick={handleSave} className="flex-1 flex items-center justify-center gap-1 bg-emerald-600 px-3 py-1 rounded text-sm text-white font-bold cursor-pointer"><Save size={14}/> Guardar</button>
+                <button onClick={() => setIsEditing(false)} className="flex-1 flex items-center justify-center gap-1 bg-red-600 px-3 py-1 rounded text-sm text-white font-bold cursor-pointer"><X size={14}/> Cancelar</button>
             </div>
         </div>
       ) : (

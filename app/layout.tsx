@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Inter, Outfit, Playfair_Display, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 import { cn } from "@/lib/utils";
+import { AuthWrapper } from "@/components/dashboard/AuthWrapper";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
 const outfit = Outfit({ subsets: ["latin"], variable: "--font-outfit" });
@@ -33,8 +34,11 @@ export default function RootLayout({
       <body className="min-h-full flex flex-col bg-[--color-void] text-[--color-text-primary] font-sans antialiased overflow-hidden" suppressHydrationWarning>
         {/* Grain overlay for cinematic texture */}
         <div className="grain-overlay" aria-hidden="true" />
-        {children}
+        <AuthWrapper>
+          {children}
+        </AuthWrapper>
       </body>
     </html>
   );
 }
+

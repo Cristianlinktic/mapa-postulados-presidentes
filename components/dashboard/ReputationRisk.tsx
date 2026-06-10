@@ -15,9 +15,13 @@ interface RiskData {
 
 export function ReputationRisk() {
   const selectedLocationId = useStore((state) => state.selectedLocationId);
+  const user = useStore((state) => state.user);
   const [risks, setRisks] = useState<RiskData[]>([]);
   const [isEditing, setIsEditing] = useState(false);
   const [editRisks, setEditRisks] = useState<RiskData[]>([]);
+
+  const isAdmin = user?.role === 'admin';
+  const showEditMode = isEditing && isAdmin;
 
   useEffect(() => {
     if (!selectedLocationId) return;
@@ -41,6 +45,7 @@ export function ReputationRisk() {
   }
 
   const handleSave = async () => {
+    if (!isAdmin) return;
     try {
       const { data: savedData, error } = await supabase
         .from('reputation_risks')
@@ -77,14 +82,16 @@ export function ReputationRisk() {
           <Shield className="text-[--color-accent] opacity-70" size={12} />
           <div className="section-label">Riesgo reputacional</div>
         </div>
-        <button onClick={() => setIsEditing(!isEditing)} className="text-[--color-text-muted] hover:text-[--color-text-primary] cursor-pointer">
-          <Edit2 size={14} />
-        </button>
+        {isAdmin && (
+          <button onClick={() => setIsEditing(!isEditing)} className="text-[--color-text-muted] hover:text-[--color-text-primary] cursor-pointer">
+            <Edit2 size={14} />
+          </button>
+        )}
       </div>
       <h2 className="display-title text-base text-[--color-text-primary] mb-4 leading-none">Monitor de vulnerabilidad</h2>
       <div className="h-px bg-[--color-panel-border] my-4" />
 
-      {isEditing ? (
+      {showEditMode ? (
         <div className="space-y-4 mt-4">
           {editRisks.map((r, i) => (
             <div key={r.candidate_name} className="bg-[--color-surface-elevated] border border-[--color-panel-border] p-4 rounded-lg space-y-2">

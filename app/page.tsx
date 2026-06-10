@@ -1,3 +1,6 @@
+"use client";
+
+import { useStore } from "@/lib/store";
 import MapContainer from "@/components/map/MapContainer";
 import { TerritorialSummary } from "@/components/dashboard/TerritorialSummary";
 import { PresidentialComparison } from "@/components/dashboard/PresidentialComparison";
@@ -8,8 +11,17 @@ import { TrendPulse } from "@/components/dashboard/TrendPulse";
 import { ThemeFilter } from "@/components/dashboard/ThemeFilter";
 import { ThemeToggle } from "@/components/dashboard/ThemeToggle";
 import { AIInsights } from "@/components/dashboard/AIInsights";
+import { LogOut } from "lucide-react";
 
 export default function Home() {
+  const user = useStore((state) => state.user);
+  const setUser = useStore((state) => state.setUser);
+
+  const handleLogout = () => {
+    setUser(null);
+    localStorage.removeItem("intel_user");
+  };
+
   return (
     <div className="flex flex-col h-screen p-4 gap-3 overflow-hidden bg-[--color-void] text-[--color-text-primary]">
 
@@ -42,6 +54,24 @@ export default function Home() {
               Sistema en vivo
             </span>
           </div>
+
+          {user && (
+            <div className="flex items-center gap-3 border-r border-[--color-panel-border] pr-4">
+              <div className="flex flex-col text-right">
+                <span className="text-xs font-bold text-[--color-text-primary]">{user.username}</span>
+                <span className={`text-[9px] uppercase tracking-widest font-extrabold ${user.role === 'admin' ? 'text-[--color-accent]' : 'text-[--color-text-muted]'}`}>
+                  {user.role === 'admin' ? 'Administrador' : 'Lector'}
+                </span>
+              </div>
+              <button 
+                onClick={handleLogout}
+                className="cursor-pointer p-2 rounded-lg bg-[--color-surface-elevated] border border-[--color-panel-border] text-[--color-text-secondary] hover:text-[--color-alert] hover:bg-[--color-alert]/5 transition-all"
+                title="Cerrar sesión"
+              >
+                <LogOut size={16} />
+              </button>
+            </div>
+          )}
           
           <div className="flex items-center gap-2">
             <ThemeToggle />
@@ -49,6 +79,7 @@ export default function Home() {
           </div>
         </div>
       </header>
+
 
       {/* ── TREND TICKER ───────────────────────────────────── */}
       <TrendPulse />
