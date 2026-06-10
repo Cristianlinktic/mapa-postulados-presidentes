@@ -41,11 +41,22 @@ export function ReputationRisk() {
   }
 
   const handleSave = async () => {
-    for (const risk of editRisks) {
-      await supabase.from('reputation_risks').upsert(risk);
+    try {
+        const { data: savedData, error } = await supabase
+            .from('reputation_risks')
+            .upsert(editRisks)
+            .select();
+        
+        if (error) {
+            console.error("Error saving risks:", error);
+        } else if (savedData) {
+            setRisks(savedData as RiskData[]);
+            setEditRisks(savedData as RiskData[]);
+            setIsEditing(false);
+        }
+    } catch (error) {
+        console.error("Error in handleSave:", error);
     }
-    setRisks(editRisks);
-    setIsEditing(false);
   };
 
   const getRiskColor = (level: string) => {

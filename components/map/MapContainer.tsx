@@ -1,9 +1,8 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import mapboxgl from "mapbox-gl";
 import { useStore } from "@/lib/store";
-import { mockTerritorialData } from "@/lib/data/mockData";
 import { supabase } from "@/lib/supabaseClient";
 
 const MAPBOX_TOKEN = process.env.NEXT_PUBLIC_MAPBOX_TOKEN;
@@ -18,6 +17,66 @@ export default function MapContainer() {
   const mapContainer = useRef<HTMLDivElement | null>(null);
   const map = useRef<mapboxgl.Map | null>(null);
   const setSelectedLocationId = useStore((state) => state.setSelectedLocationId);
+  const [territorialData, setTerritorialData] = useState<any[]>([]);
+
+  const fetchTerritorialData = async () => {
+    const { data } = await supabase.from('territories').select('*');
+    if (data) {
+      setTerritorialData(data);
+    }
+  };
+
+  const updateMapColors = (data: any[]) => {
+    if (!map.current || !map.current.getLayer('colombia-layer')) return;
+
+    let colorExpression: any;
+    
+    if (data.length > 0) {
+      colorExpression = [
+        'match',
+        ['get', 'shapeID'],
+        ...data.flatMap((d) => [
+          d.shape_id,
+          d.favorabilidad_cepeda > d.favorabilidad_espriella ? '#c084fc' : '#f97316'
+        ]),
+        '#e2e8f0' // Color por defecto para deptos sin datos en DB
+      ];
+    } else {
+      colorExpression = '#e2e8f0';
+    }
+
+    map.current.setPaintProperty('colombia-layer', 'fill-color', [
+      'case',
+      ['boolean', ['feature-state', 'selected'], false],
+      '#3b82f6',
+      ['boolean', ['feature-state', 'hover'], false],
+      'rgba(59, 130, 246, 0.4)',
+      colorExpression
+    ]);
+  };
+
+  useEffect(() => {
+    fetchTerritorialData();
+
+    const channel = supabase
+      .channel('schema-db-changes')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'territories' },
+        () => {
+          fetchTerritorialData();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, []);
+
+  useEffect(() => {
+    updateMapColors(territorialData);
+  }, [territorialData]);
 
   useEffect(() => {
     if (map.current) return;
@@ -34,7 +93,7 @@ export default function MapContainer() {
 
     const addMapLayers = () => {
       if (!map.current) return;
-      if (map.current.getSource('colombia')) return; // Already added
+      if (map.current.getSource('colombia')) return;
 
       map.current.addSource('colombia', {
         type: 'geojson',
@@ -42,29 +101,12 @@ export default function MapContainer() {
         generateId: true
       });
 
-      const colorExpression: any = [
-        'match',
-        ['get', 'shapeID'],
-        ...Object.entries(mockTerritorialData).flatMap(([id, data]) => [
-          id,
-          data.favorabilidadCepeda > data.favorabilidadDeLaEspriella ? '#c084fc' : '#f97316'
-        ]),
-        '#e2e8f0'
-      ];
-
       map.current.addLayer({
         id: 'colombia-layer',
         type: 'fill',
         source: 'colombia',
         paint: {
-          'fill-color': [
-            'case',
-            ['boolean', ['feature-state', 'selected'], false],
-            '#3b82f6',
-            ['boolean', ['feature-state', 'hover'], false],
-            'rgba(59, 130, 246, 0.4)',
-            colorExpression
-          ],
+          'fill-color': '#e2e8f0',
           'fill-opacity': 0.8
         }
       });
@@ -78,6 +120,9 @@ export default function MapContainer() {
           'line-width': ['case', ['boolean', ['feature-state', 'selected'], false], 2, 0.5]
         }
       });
+
+      // Initial color update
+      updateMapColors(territorialData);
     };
 
     map.current.on('style.load', addMapLayers);

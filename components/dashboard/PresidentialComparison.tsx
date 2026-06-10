@@ -22,38 +22,65 @@ export function PresidentialComparison() {
   const [isEditing, setIsEditing] = useState(false);
   const [editCandidates, setEditCandidates] = useState<CandidateData[]>([]);
 
-  useEffect(() => {
-    async function fetchCandidates() {
-      if (!selectedLocationId) {
-        setCandidates([]);
-        return;
-      }
-      const { data } = await supabase
-        .from('candidates')
-        .select('*')
-        .eq('shape_id', selectedLocationId!);
+  const [loading, setLoading] = useState(false);
 
-      if (data && data.length > 0) {
-        setCandidates(data as CandidateData[]);
-        setEditCandidates(data as CandidateData[]);
-      } else {
-        const defaultCandidates = [
-          { id: crypto.randomUUID(), name: 'Iván Cepeda', shape_id: selectedLocationId!, favorabilidad: 0, negatividad: 0, engagement: 0, alcance: 0, riesgo: 'Medio' },
-          { id: crypto.randomUUID(), name: 'Abelardo de la Espriella', shape_id: selectedLocationId!, favorabilidad: 0, negatividad: 0, engagement: 0, alcance: 0, riesgo: 'Medio' }
-        ];
-        setCandidates(defaultCandidates as CandidateData[]);
-        setEditCandidates(defaultCandidates as CandidateData[]);
-      }
+  const fetchCandidates = async (isRefresh = false) => {
+    if (!selectedLocationId) {
+      setCandidates([]);
+      return;
     }
+    if (!isRefresh) setLoading(true);
+    
+    const { data } = await supabase
+      .from('candidates')
+      .select('*')
+      .eq('shape_id', selectedLocationId!);
+
+    if (data && data.length > 0) {
+      setCandidates(data as CandidateData[]);
+      setEditCandidates(data as CandidateData[]);
+    } else {
+      const defaultCandidates = [
+        { id: crypto.randomUUID(), name: 'Iván Cepeda', shape_id: selectedLocationId!, favorabilidad: 0, negatividad: 0, engagement: 0, alcance: 0, riesgo: 'Medio' },
+        { id: crypto.randomUUID(), name: 'Abelardo de la Espriella', shape_id: selectedLocationId!, favorabilidad: 0, negatividad: 0, engagement: 0, alcance: 0, riesgo: 'Medio' }
+      ];
+      setCandidates(defaultCandidates as CandidateData[]);
+      setEditCandidates(defaultCandidates as CandidateData[]);
+    }
+    setLoading(false);
+  };
+
+  useEffect(() => {
     fetchCandidates();
   }, [selectedLocationId]);
 
   const handleSave = async () => {
-    for (const cand of editCandidates) {
-      await supabase.from('candidates').upsert({ ...cand, shape_id: selectedLocationId! });
+    setLoading(true);
+    try {
+        // Usamos onConflict para asegurar que si ya existe un candidato con ese nombre 
+        // en esa región, se actualice en lugar de intentar insertar un duplicado.
+        const { data: savedData, error } = await supabase
+            .from('candidates')
+            .upsert(
+                editCandidates.map(c => ({ ...c, shape_id: selectedLocationId! })),
+                { onConflict: 'shape_id,name' }
+            )
+            .select();
+        
+        if (error) {
+            console.error("Error saving candidates:", JSON.stringify(error, null, 2));
+            // También logeamos el objeto directamente por si el navegador lo muestra mejor
+            console.dir(error);
+        } else if (savedData) {
+            setCandidates(savedData as CandidateData[]);
+            setEditCandidates(savedData as CandidateData[]);
+            setIsEditing(false);
+        }
+    } catch (error) {
+        console.error("Unexpected error in handleSave:", error);
+    } finally {
+        setLoading(false);
     }
-    setCandidates(editCandidates);
-    setIsEditing(false);
   };
 
   const cepeda = candidates.find(c => c.name.includes("Cepeda")) || { name: 'Iván Cepeda', favorabilidad: 0, negatividad: 0 };
@@ -62,7 +89,12 @@ export function PresidentialComparison() {
   if (!selectedLocationId) return <div className="p-5 text-sm text-[--color-text-secondary]">Selecciona una región para ver la comparación.</div>;
 
   return (
-    <div className="intel-panel p-5 rounded-2xl">
+    <div className="intel-panel p-5 rounded-2xl min-h-[200px]">
+      {loading && !isEditing && (
+          <div className="absolute inset-0 bg-[--color-surface]/50 backdrop-blur-[1px] z-10 flex items-center justify-center rounded-2xl">
+              <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-[--color-accent]"></div>
+          </div>
+      )}
       <div className="flex items-center justify-between mb-4">
         <div>
           <div className="section-label mb-1 text-[--color-text-secondary]">Comparador Presidencial</div>
@@ -85,7 +117,7 @@ export function PresidentialComparison() {
                 <label className="text-xs text-[--color-text-secondary]">Favorabilidad (%)</label>
                 <input type="number" value={c.favorabilidad} onChange={e => {
                     const newC = [...editCandidates];
-                    newC[i].favorabilidad = parseInt(e.target.value);
+                    newC[i] = { ...newC[i], favorabilidad: parseInt(e.target.value) || 0 };
                     setEditCandidates(newC);
                 }} className="w-full bg-[--color-surface] border border-[--color-panel-border] p-2 text-sm rounded text-[--color-text-primary]"/>
               </div>
@@ -94,7 +126,7 @@ export function PresidentialComparison() {
                 <label className="text-xs text-[--color-text-secondary]">Negatividad (%)</label>
                 <input type="number" value={c.negatividad} onChange={e => {
                     const newC = [...editCandidates];
-                    newC[i].negatividad = parseInt(e.target.value);
+                    newC[i] = { ...newC[i], negatividad: parseInt(e.target.value) || 0 };
                     setEditCandidates(newC);
                 }} className="w-full bg-[--color-surface] border border-[--color-panel-border] p-2 text-sm rounded text-[--color-text-primary]"/>
               </div>

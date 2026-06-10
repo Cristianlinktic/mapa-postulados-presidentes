@@ -24,53 +24,63 @@ export function TerritorialSummary() {
   const [formData, setFormData] = useState<TerritorialData | null>(null);
   const [loading, setLoading] = useState(false);
 
-  useEffect(() => {
-    async function fetchData() {
-      if (!selectedLocationId) return;
-      setLoading(true);
-      setData(null);
-      setFormData(null);
-      
-      const { data: fetchedData, error } = await supabase.from('territories').select('*').eq('shape_id', selectedLocationId!).maybeSingle();
-      
-      if (fetchedData) {
-        setData(fetchedData);
-        setFormData(fetchedData);
-      } else {
-        const dept = departments.find(d => d.shapeID === selectedLocationId);
-        setFormData({
-            shape_id: selectedLocationId!,
-            name: dept?.name || 'Desconocido',
-            poblacion: 0,
-            censo_electoral: 0,
-            favorabilidad_cepeda: 0,
-            favorabilidad_espriella: 0,
-            sentimiento_predominante: 'Neutral',
-            riesgo_reputacional: 'Bajo'
-        });
-      }
-      setLoading(false);
+  const setCurrentData = useStore((state) => state.setCurrentData);
+
+  const fetchData = async (isRefresh = false) => {
+    if (!selectedLocationId) return;
+    
+    if (!isRefresh) {
+        setLoading(true);
+        setData(null);
+        setFormData(null);
     }
+    
+    const { data: fetchedData, error } = await supabase.from('territories').select('*').eq('shape_id', selectedLocationId!).maybeSingle();
+    
+    if (fetchedData) {
+      setData(fetchedData);
+      setFormData(fetchedData);
+      setCurrentData(fetchedData);
+    } else {
+      const dept = departments.find(d => d.shapeID === selectedLocationId);
+      const initialFormData = {
+          shape_id: selectedLocationId!,
+          name: dept?.name || 'Desconocido',
+          poblacion: 0,
+          censo_electoral: 0,
+          favorabilidad_cepeda: 0,
+          favorabilidad_espriella: 0,
+          sentimiento_predominante: 'Neutral',
+          riesgo_reputacional: 'Bajo'
+      };
+      setFormData(initialFormData);
+      setCurrentData(null);
+    }
+    setLoading(false);
+  };
+
+  useEffect(() => {
     fetchData();
   }, [selectedLocationId]);
 
-  const handleCreate = async () => {
-    if (!formData) return;
-    const { error } = await supabase.from('territories').insert([formData]);
-    if (error) console.error('Error creating:', error);
-    else { 
-      setData(formData); 
-      setIsEditing(false); 
-    }
-  };
-
   const handleSave = async () => {
     if (!formData) return;
-    const { error } = await supabase.from('territories').update(formData).eq('shape_id', formData.shape_id);
-    if (error) console.error('Error updating:', error);
-    else { 
-      setData(formData); 
+    setLoading(true);
+    const { data: savedData, error } = await supabase
+        .from('territories')
+        .upsert(formData)
+        .select()
+        .single();
+
+    if (error) {
+        console.error('Error saving territory:', error);
+        setLoading(false);
+    } else if (savedData) { 
+      setData(savedData);
+      setFormData(savedData);
+      setCurrentData(savedData);
       setIsEditing(false); 
+      setLoading(false);
     }
   };
 
@@ -78,53 +88,66 @@ export function TerritorialSummary() {
     return (
       <div className="p-10 flex flex-col items-center justify-center gap-3">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[--color-accent]"></div>
-        <div className="text-xs text-[--color-text-secondary] mono-data uppercase tracking-widest">Sincronizando...</div>
+        <div className="text-xs text-[--color-text-secondary] mono-data uppercase tracking-widest">Procesando...</div>
       </div>
     );
   }
 
-  if (!data) {
-    if (selectedLocationId && formData) {
-        return (
-            <div className="p-5 space-y-4">
-                <div className="flex items-center gap-2 mb-2">
-                    <div className="w-2 h-2 rounded-full bg-amber-500 animate-pulse" />
-                    <h3 className="font-bold text-[--color-text-primary] text-sm uppercase tracking-wider">Configurar datos de región</h3>
-                </div>
-                
-                <div className="space-y-1">
-                    <label className="text-[10px] uppercase tracking-widest text-[--color-text-secondary] font-bold">Departamento</label>
-                    <div className="text-sm bg-[--color-void] p-3 rounded-lg text-[--color-text-primary] border border-[--color-panel-border] font-bold">{formData.name}</div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-3">
-                    <div className="space-y-1">
-                        <label className="text-[10px] uppercase tracking-widest text-[--color-text-secondary]">Población</label>
-                        <input type="number" value={formData.poblacion} onChange={e => setFormData({...formData, poblacion: parseInt(e.target.value)})} className="w-full bg-[--color-surface] border border-[--color-panel-border] p-2 rounded text-sm text-[--color-text-primary] focus:border-[--color-accent] outline-none transition-colors" />
-                    </div>
-                    <div className="space-y-1">
-                        <label className="text-[10px] uppercase tracking-widest text-[--color-text-secondary]">Censo Electoral</label>
-                        <input type="number" value={formData.censo_electoral} onChange={e => setFormData({...formData, censo_electoral: parseInt(e.target.value)})} className="w-full bg-[--color-surface] border border-[--color-panel-border] p-2 rounded text-sm text-[--color-text-primary] focus:border-[--color-accent] outline-none transition-colors" />
-                    </div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-3">
-                    <div className="space-y-1">
-                        <label className="text-[10px] uppercase tracking-widest text-[--color-text-secondary]">Fav. Cepeda (%)</label>
-                        <input type="number" value={formData.favorabilidad_cepeda} onChange={e => setFormData({...formData, favorabilidad_cepeda: parseInt(e.target.value)})} className="w-full bg-[--color-surface] border border-[--color-panel-border] p-2 rounded text-sm text-[--color-text-primary] focus:border-[--color-accent] outline-none transition-colors" />
-                    </div>
-                    <div className="space-y-1">
-                        <label className="text-[10px] uppercase tracking-widest text-[--color-text-secondary]">Fav. Espriella (%)</label>
-                        <input type="number" value={formData.favorabilidad_espriella} onChange={e => setFormData({...formData, favorabilidad_espriella: parseInt(e.target.value)})} className="w-full bg-[--color-surface] border border-[--color-panel-border] p-2 rounded text-sm text-[--color-text-primary] focus:border-[--color-accent] outline-none transition-colors" />
-                    </div>
-                </div>
-
-                <button onClick={handleCreate} className="w-full cursor-pointer bg-emerald-500 hover:bg-emerald-600 py-3 rounded-lg font-bold text-white transition-all shadow-lg shadow-emerald-500/20 active:scale-[0.98]">
-                    Crear registro de inteligencia
-                </button>
+  // Unified Form for Edit and Create
+  if (isEditing || (!data && selectedLocationId && formData)) {
+    if (!formData) return null;
+    const isCreating = !data;
+    return (
+        <div className="p-5 space-y-4">
+            <div className="flex items-center gap-2 mb-2">
+                <div className={`w-2 h-2 rounded-full ${isCreating ? 'bg-amber-500 animate-pulse' : 'bg-[--color-accent]'}`} />
+                <h3 className="font-bold text-[--color-text-primary] text-sm uppercase tracking-wider">
+                    {isCreating ? 'Configurar región' : `Editar ${data?.name}`}
+                </h3>
             </div>
-        )
-    }
+            
+            <div className="space-y-1">
+                <label className="text-[10px] uppercase tracking-widest text-[--color-text-secondary] font-bold">Departamento</label>
+                <div className="text-sm bg-[--color-void] p-3 rounded-lg text-[--color-text-primary] border border-[--color-panel-border] font-bold">{formData.name}</div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1">
+                    <label className="text-[10px] uppercase tracking-widest text-[--color-text-secondary]">Población</label>
+                    <input type="number" value={formData.poblacion} onChange={e => setFormData({...formData, poblacion: parseInt(e.target.value) || 0})} className="w-full bg-[--color-surface] border border-[--color-panel-border] p-2 rounded text-sm text-[--color-text-primary] focus:border-[--color-accent] outline-none transition-colors" />
+                </div>
+                <div className="space-y-1">
+                    <label className="text-[10px] uppercase tracking-widest text-[--color-text-secondary]">Censo Electoral</label>
+                    <input type="number" value={formData.censo_electoral} onChange={e => setFormData({...formData, censo_electoral: parseInt(e.target.value) || 0})} className="w-full bg-[--color-surface] border border-[--color-panel-border] p-2 rounded text-sm text-[--color-text-primary] focus:border-[--color-accent] outline-none transition-colors" />
+                </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1">
+                    <label className="text-[10px] uppercase tracking-widest text-[--color-text-secondary]">Fav. Cepeda (%)</label>
+                    <input type="number" value={formData.favorabilidad_cepeda} onChange={e => setFormData({...formData, favorabilidad_cepeda: parseInt(e.target.value) || 0})} className="w-full bg-[--color-surface] border border-[--color-panel-border] p-2 rounded text-sm text-[--color-text-primary] focus:border-[--color-accent] outline-none transition-colors" />
+                </div>
+                <div className="space-y-1">
+                    <label className="text-[10px] uppercase tracking-widest text-[--color-text-secondary]">Fav. Espriella (%)</label>
+                    <input type="number" value={formData.favorabilidad_espriella} onChange={e => setFormData({...formData, favorabilidad_espriella: parseInt(e.target.value) || 0})} className="w-full bg-[--color-surface] border border-[--color-panel-border] p-2 rounded text-sm text-[--color-text-primary] focus:border-[--color-accent] outline-none transition-colors" />
+                </div>
+            </div>
+
+            <div className="flex gap-2 pt-2">
+                <button onClick={handleSave} className="flex-1 cursor-pointer bg-emerald-500 hover:bg-emerald-600 py-3 rounded-lg font-bold text-white transition-all shadow-lg shadow-emerald-500/20 active:scale-[0.98] flex items-center justify-center gap-2">
+                    <Save size={16}/> {isCreating ? 'Crear registro' : 'Guardar cambios'}
+                </button>
+                {isEditing && (
+                    <button onClick={() => setIsEditing(false)} className="px-4 cursor-pointer bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 rounded-lg font-bold text-red-500 transition-all flex items-center justify-center">
+                        <X size={16}/>
+                    </button>
+                )}
+            </div>
+        </div>
+    )
+  }
+
+  if (!data) {
     return (
       <div className="p-6 flex flex-col items-center justify-center gap-3 text-center py-8">
         <div className="w-10 h-10 rounded-full flex items-center justify-center"
@@ -136,46 +159,6 @@ export function TerritorialSummary() {
           <p className="text-xs text-[--color-text-muted]">
             Haz clic sobre un departamento en el mapa para ver su análisis territorial.
           </p>
-        </div>
-      </div>
-    );
-  }
-
-  if (isEditing && formData) {
-    return (
-      <div className="p-5 space-y-4">
-        <h3 className="font-bold text-[--color-text-primary]">Editar {data.name}</h3>
-        
-        <div className="space-y-1">
-            <label className="text-xs text-[--color-text-secondary]">Departamento</label>
-            <div className="text-sm bg-[--color-void] p-2 rounded text-[--color-text-primary] border border-[--color-panel-border]">{formData.name}</div>
-        </div>
-
-        <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-1">
-                <label className="text-xs text-[--color-text-secondary]">Población</label>
-                <input type="number" value={formData.poblacion} onChange={e => setFormData({...formData, poblacion: parseInt(e.target.value)})} className="w-full bg-[--color-surface] border border-[--color-panel-border] p-2 rounded text-[--color-text-primary]" />
-            </div>
-            <div className="space-y-1">
-                <label className="text-xs text-[--color-text-secondary]">Censo Electoral</label>
-                <input type="number" value={formData.censo_electoral} onChange={e => setFormData({...formData, censo_electoral: parseInt(e.target.value)})} className="w-full bg-[--color-surface] border border-[--color-panel-border] p-2 rounded text-[--color-text-primary]" />
-            </div>
-        </div>
-
-        <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-1">
-                <label className="text-xs text-[--color-text-secondary]">Fav. Cepeda (%)</label>
-                <input type="number" value={formData.favorabilidad_cepeda} onChange={e => setFormData({...formData, favorabilidad_cepeda: parseInt(e.target.value)})} className="w-full bg-[--color-surface] border border-[--color-panel-border] p-2 rounded text-[--color-text-primary]" />
-            </div>
-            <div className="space-y-1">
-                <label className="text-xs text-[--color-text-secondary]">Fav. Espriella (%)</label>
-                <input type="number" value={formData.favorabilidad_espriella} onChange={e => setFormData({...formData, favorabilidad_espriella: parseInt(e.target.value)})} className="w-full bg-[--color-surface] border border-[--color-panel-border] p-2 rounded text-[--color-text-primary]" />
-            </div>
-        </div>
-
-        <div className="flex gap-2">
-          <button onClick={handleSave} className="cursor-pointer flex items-center gap-1 bg-emerald-500 hover:bg-emerald-600 px-3 py-1.5 rounded text-sm flex-1 justify-center font-bold text-white transition-colors"><Save size={14}/> Guardar</button>
-          <button onClick={() => setIsEditing(false)} className="cursor-pointer flex items-center gap-1 bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 px-3 py-1.5 rounded text-sm flex-1 justify-center font-bold text-red-500 transition-colors"><X size={14}/> Cancelar</button>
         </div>
       </div>
     );

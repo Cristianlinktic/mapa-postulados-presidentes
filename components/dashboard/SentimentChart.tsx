@@ -43,11 +43,22 @@ export function SentimentChart() {
   }
 
   const handleSave = async () => {
-    for (const row of editData) {
-      await supabase.from('sentiment_data').upsert(row);
+    try {
+        const { data: savedData, error } = await supabase
+            .from('sentiment_data')
+            .upsert(editData)
+            .select();
+
+        if (error) {
+            console.error("Error saving sentiment data:", error);
+        } else if (savedData) {
+            setData(savedData as SentimentRow[]);
+            setEditData(savedData as SentimentRow[]);
+            setIsEditing(false);
+        }
+    } catch (error) {
+        console.error("Error in handleSave:", error);
     }
-    setData(editData);
-    setIsEditing(false);
   };
 
   return (
