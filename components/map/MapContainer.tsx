@@ -70,11 +70,11 @@ export default function MapContainer() {
         setTerritorialData(data);
         // Intentar actualizar colores si el mapa ya está listo
         if (map.current && layersAdded.current) {
-            console.log("MapContainer: Data ready, layers ready, applying colors");
-            updateMapColors(data);
+          console.log("MapContainer: Data ready, layers ready, applying colors");
+          updateMapColors(data);
         } else {
-            console.log("MapContainer: Data ready, layers not ready, pending data");
-            pendingData.current = data;
+          console.log("MapContainer: Data ready, layers not ready, pending data");
+          pendingData.current = data;
         }
       }
     };
@@ -133,7 +133,7 @@ export default function MapContainer() {
             type: "line",
             source: "colombia",
             paint: {
-              "line-color": "#94a3b8",
+              "line-color": "rgba(90, 90, 90, 0.57)",
               "line-width": [
                 "case",
                 ["boolean", ["feature-state", "selected"], false],
