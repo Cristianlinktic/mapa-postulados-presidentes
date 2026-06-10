@@ -116,9 +116,9 @@ export function NarrativeRadar() {
             <div className="mono-data text-[10px] font-bold uppercase tracking-widest pb-1.5 border-b border-[--color-panel-border] text-[--color-accent]">{cand}</div>
             {renderCategory(cand, 'positive', '↑ Positivo', '--color-cepeda')}
             {renderCategory(cand, 'negative', '↓ Negativo', '--color-alert')}
-            {renderCategory(cand, 'emerging', '◈ Emergente', '--color-warning')}
-          </div>
-        ))}
+            {renderCategory(cand, 'emerging', 'Emergente', '--color-warning')}
+            </div>
+            ))}
       </div>
       {isEditing && <button onClick={() => setIsEditing(false)} className="mt-4 w-full bg-emerald-500 hover:bg-emerald-600 p-2 rounded text-xs font-bold text-white transition-colors cursor-pointer">Guardar</button>}
     </div>

@@ -183,7 +183,7 @@ function CandidateCard({ data, color }: { data: CandidateData; color: 'cepeda' |
           <TrendingDown size={10} className="mb-0.5 ml-auto text-[--color-alert]" style={{ opacity: 0.6 }} />
         </div>
         <div className="h-2.5 w-full bg-[--color-void] rounded-full overflow-hidden mt-1.5 border border-[--color-panel-border]">
-          <div className="h-full bg-[--color-alert]" style={{ width: `${data.negatividad || 0}%` }}></div>
+          <div className="h-full" style={{ width: `${Math.max(4, data.negatividad || 0)}%`, background: 'var(--color-alert)', opacity: 0.7 + ((data.negatividad || 0) / 100) * 0.3 }}></div>
         </div>
       </div>
     </div>
