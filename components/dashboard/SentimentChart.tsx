@@ -139,19 +139,19 @@ export function SentimentChart() {
                 const x = (i / (data.length - 1)) * 100;
                 return (
                   <g key={d.id}>
-                    <circle cx={x} cy={100 - d.cepeda_value} r="3" fill="var(--color-cepeda)" className="cursor-pointer hover:r-4 transition-all" 
-                      onMouseEnter={(e) => setTooltip({x: x, y: 100 - d.cepeda_value, text: `Cepeda: ${d.cepeda_value}%`, visible: true})} />
-                    <circle cx={x} cy={100 - d.espriella_value} r="3" fill="var(--color-espriella)" className="cursor-pointer hover:r-4 transition-all" 
-                      onMouseEnter={(e) => setTooltip({x: x, y: 100 - d.espriella_value, text: `Espriella: ${d.espriella_value}%`, visible: true})} />
+                    <circle cx={x} cy={100 - d.cepeda_value} r="2" fill="var(--color-cepeda)" className="cursor-pointer" 
+                      onMouseEnter={() => setTooltip({x: x, y: 100 - d.cepeda_value, text: `Cepeda: ${d.cepeda_value}%`, visible: true})} />
+                    <circle cx={x} cy={100 - d.espriella_value} r="2" fill="var(--color-espriella)" className="cursor-pointer" 
+                      onMouseEnter={() => setTooltip({x: x, y: 100 - d.espriella_value, text: `Espriella: ${d.espriella_value}%`, visible: true})} />
                   </g>
                 );
               })}
             </svg>
 
-            {/* Tooltip */}
+            {/* Tooltip - Adjusted positioning */}
             {tooltip.visible && (
-                <div className="absolute bg-[--color-surface] border border-[--color-panel-border] p-1 rounded text-[10px] mono-data shadow-lg"
-                     style={{ left: `${tooltip.x}%`, top: `${tooltip.y}%` }}>
+                <div className="absolute bg-white border border-gray-200 p-2 rounded text-xs font-bold text-black shadow-xl z-[100] pointer-events-none"
+                     style={{ left: `${tooltip.x}%`, top: `${tooltip.y - 15}%`, transform: 'translateX(-50%)' }}>
                     {tooltip.text}
                 </div>
             )}
