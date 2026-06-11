@@ -23,9 +23,9 @@ export function AIInsights() {
   const dept = departments.find(d => d.shapeID === locationId);
   const regionName = locationId ? (dept ? dept.name : 'Región desconocida') : 'General';
 
-  useEffect(() => {
-    async function fetchNarrative() {
+  async function fetchNarrative() {
       setLoading(true);
+      // console.log("Fetching narrative for:", { locationId, theme });
 
       // Construimos la consulta base
       let query = supabase.from('narratives').select('*').eq('theme', theme);
@@ -35,18 +35,31 @@ export function AIInsights() {
       } else {
         query = query.is('shape_id', null);
       }
+      
+      // Ordenamos por fecha si existiera (aquí asumimos orden de inserción)
+      // Como no tenemos fecha, traemos todos los que coinciden y tomamos el último
+      const { data, error: fetchError } = await query;
+      
+      let singleData = null;
+      if (Array.isArray(data) && data.length > 0) {
+          singleData = data[data.length - 1]; // Tomamos el último
+      }
 
-      const { data } = await query.maybeSingle();
+      if (fetchError) {
+          console.error("Supabase fetch error:", fetchError);
+      }
 
-      if (data) {
-        setNarrative(data.text);
-        setEditValue(data.text);
+      if (singleData) {
+        setNarrative(singleData.text);
+        setEditValue(singleData.text);
       } else {
         setNarrative(`No hay análisis disponible para ${locationId ? 'esta región y ' : ''}temática.`);
         setEditValue("");
       }
       setLoading(false);
-    }
+  }
+
+  useEffect(() => {
     fetchNarrative();
   }, [locationId, theme]);
 
@@ -62,7 +75,7 @@ export function AIInsights() {
         }); 
 
     if (!saveError) {
-        setNarrative(editValue);
+        await fetchNarrative();
         setIsEditing(false);
     } else {
         if (saveError.code === '23503') {
