@@ -65,6 +65,7 @@ export function TerritorialSummary() {
   }, [selectedLocationId]);
 
   const handleSave = async () => {
+    console.log("TerritorialSummary: handleSave ejecutado");
     if (!isAdmin || !formData) return;
     setLoading(true);
     const { data: savedData, error } = await supabase
@@ -72,6 +73,8 @@ export function TerritorialSummary() {
         .upsert(formData)
         .select()
         .single();
+    
+    console.log("TerritorialSummary: Upsert result:", { savedData, error });
 
     if (error) {
         console.error('Error saving territory:', error);

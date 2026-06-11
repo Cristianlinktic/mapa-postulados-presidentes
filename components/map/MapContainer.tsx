@@ -23,6 +23,28 @@ export default function MapContainer() {
   const activePopup = useStore((state) => state.activePopup);
   const currentData = useStore((state) => state.currentData);
 
+  // Update popup dynamically when currentData changes
+  useEffect(() => {
+    if (activePopup && currentData) {
+        console.log("MapContainer: Updating popup content dynamically");
+        activePopup.setHTML(createPopupHTML(currentData));
+    }
+    
+    // Update map colors dynamically when currentData changes
+    if (currentData) {
+        console.log("MapContainer: Refreshing map colors due to currentData change");
+        // We need the full list to update colors, so let's refresh territorialData
+        const refreshData = async () => {
+            const { data } = await supabase.from('territories').select('*');
+            if (data) {
+                setTerritorialData(data);
+                updateMapColors(data);
+            }
+        };
+        refreshData();
+    }
+  }, [currentData, activePopup]);
+
   const [territorialData, setTerritorialData] = useState<any[]>([]);
   const pendingData = useRef<any[] | null>(null);
 
