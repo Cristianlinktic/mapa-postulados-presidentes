@@ -2,7 +2,7 @@
 
 import { useStore } from "@/lib/store";
 
-const themes = ['General', 'Seguridad', 'Economía', 'Paz'] as const;
+const themes = ['General'] as const;
 
 const themeIcons: Record<string, string> = {
   General: '◈',

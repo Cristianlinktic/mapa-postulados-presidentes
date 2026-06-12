@@ -7,8 +7,8 @@ interface AppState {
   setSelectedLocationId: (id: string | null) => void;
   currentData: TerritorialData | null;
   setCurrentData: (data: TerritorialData | null) => void;
-  currentTheme: 'General' | 'Seguridad' | 'Economía' | 'Paz';
-  setCurrentTheme: (theme: 'General' | 'Seguridad' | 'Economía' | 'Paz') => void;
+  currentTheme: 'General';
+  setCurrentTheme: (theme: 'General') => void;
   // Map helpers
   mapInstance: mapboxgl.Map | null;
   setMapInstance: (map: mapboxgl.Map | null) => void;
