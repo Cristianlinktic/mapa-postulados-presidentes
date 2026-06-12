@@ -11,6 +11,7 @@ import { TrendPulse } from "@/components/dashboard/TrendPulse";
 import { ThemeFilter } from "@/components/dashboard/ThemeFilter";
 import { ThemeToggle } from "@/components/dashboard/ThemeToggle";
 import { AIInsights } from "@/components/dashboard/AIInsights";
+import { DepartmentSelector } from "@/components/dashboard/DepartmentSelector";
 import { LogOut } from "lucide-react";
 
 export default function Home() {
@@ -94,6 +95,7 @@ export default function Home() {
 
         {/* SIDEBAR */}
         <aside className="w-[340px] flex flex-col gap-3 overflow-y-auto pr-2 pb-4">
+          <DepartmentSelector />
           <AIInsights />
 
           <div className="intel-panel rounded-2xl">

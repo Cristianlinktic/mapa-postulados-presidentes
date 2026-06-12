@@ -9,12 +9,14 @@ interface AppState {
   setCurrentData: (data: TerritorialData | null) => void;
   currentTheme: 'General';
   setCurrentTheme: (theme: 'General') => void;
+  triggerDeptFlyTo: string | null;
+  setTriggerDeptFlyTo: (id: string | null) => void;
   // Map helpers
   mapInstance: mapboxgl.Map | null;
   setMapInstance: (map: mapboxgl.Map | null) => void;
   activePopup: mapboxgl.Popup | null;
   setActivePopup: (popup: mapboxgl.Popup | null) => void;
-  
+
   // Auth state
   user: { username: string; role: 'admin' | 'reader' } | null;
   setUser: (user: { username: string; role: 'admin' | 'reader' } | null) => void;
@@ -27,6 +29,8 @@ export const useStore = create<AppState>((set) => ({
   setCurrentData: (data) => set({ currentData: data }),
   currentTheme: 'General',
   setCurrentTheme: (theme) => set({ currentTheme: theme }),
+  triggerDeptFlyTo: null,
+  setTriggerDeptFlyTo: (id) => set({ triggerDeptFlyTo: id }),
   mapInstance: null,
   setMapInstance: (map) => set({ mapInstance: map }),
   activePopup: null,
